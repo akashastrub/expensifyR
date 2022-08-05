@@ -1,0 +1,26 @@
+direction,category,subcategory
+in,in,salary
+in,in,in other
+out,accommodation,bills
+out,accommodation,accommodation other
+out,accommodation,rent
+out,commuting,bike
+out,commuting,public transport
+out,food,eat out
+out,food,supermarket
+out,living,visiting friends abroad
+out,living,out entertainment
+out,medical,medical extras
+out,medical,medical required
+out,sports,fun sports
+out,sports,fitness
+out,holidays,holiday accommodation
+out,holidays,holiday eat out
+out,holidays,holiday activities
+out,holidays,holiday travel
+out,extras,presents
+out,extras,clothes
+out,other,cash
+out,other,admin
+out,living,phone bill
+out,other,other

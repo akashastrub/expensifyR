@@ -1,0 +1,110 @@
+date,description,amount_chf,amount_dkk,amount_eur,amount_usd,amount_gbp,bank,subcategory,direction,category
+2022-05-01,To Jamie,NA,-33,-4.44,NA,NA,Revolut DKK,eat out,out,food
+2022-05-01,Fakta,NA,-64.4,-8.66,NA,NA,Revolut DKK,supermarket,out,food
+2022-05-02,Fakta,NA,-71.25,-9.59,NA,NA,Revolut DKK,supermarket,out,food
+2022-05-03,MobilePay Luke,NA,-191.17,-25.72,NA,NA,DanskeBank,eat out,out,food
+2022-05-03,Apotek,NA,-87.55,-11.78,NA,NA,Revolut DKK,medical required,out,medical
+2022-05-03,Irma,NA,-214.45,-28.85,NA,NA,Revolut DKK,supermarket,out,food
+2022-05-05,Fakta,NA,-138.85,-18.67,NA,NA,Revolut DKK,supermarket,out,food
+2022-05-06,Fakta,NA,-171.2,-23.02,NA,NA,Revolut DKK,supermarket,out,food
+2022-05-08,Wh-Smith,NA,-72.95,-9.81,NA,NA,Revolut DKK,supermarket,out,food
+2022-05-09,Revolut Ltd,NA,NA,14.21,15,NA,Revolut USD,in other,in,in
+2022-05-10,Easypark A/s,NA,-62.01,-8.34,NA,NA,Revolut DKK,holiday activities,out,holidays
+2022-05-10,English Pub,NA,NA,-10.1,NA,NA,Revolut EUR,holiday activities,out,holidays
+2022-05-10,English Pub,NA,NA,-10.46,NA,NA,Revolut EUR,holiday activities,out,holidays
+2022-05-10,English Pub,NA,NA,-10.1,NA,NA,Revolut EUR,holiday activities,out,holidays
+2022-05-10,English Pub,NA,NA,-10.1,NA,NA,Revolut EUR,holiday activities,out,holidays
+2022-05-11,English Pub,NA,NA,-20.19,NA,NA,Revolut EUR,holiday activities,out,holidays
+2022-05-12,Joe And The Juice,NA,NA,-13.52,NA,NA,Revolut EUR,holiday eat out,out,holidays
+2022-05-13,Joe And The Juice,NA,NA,-18.02,NA,NA,Revolut EUR,holiday eat out,out,holidays
+2022-05-14,Dsb,NA,-100,-13.44,NA,NA,Revolut DKK,public transport,out,commuting
+2022-05-14,Dsb,NA,-100,-13.44,NA,NA,Revolut DKK,public transport,out,commuting
+2022-05-14,Irma,NA,-270.1,-36.3,NA,NA,Revolut DKK,supermarket,out,food
+2022-05-15,Magasin,NA,-206.1,-27.71,NA,NA,Revolut DKK,clothes,out,extras
+2022-05-15,Meal out,NA,-186,-25.01,NA,NA,Revolut DKK,eat out,out,food
+2022-05-15,Irma,NA,-107.4,-14.44,NA,NA,Revolut DKK,supermarket,out,food
+2022-05-16,boligportal,NA,-499,-67.08,NA,NA,Revolut DKK,accommodation other,out,accommodation
+2022-05-17,Fakta,NA,-225.42,-30.31,NA,NA,Revolut DKK,supermarket,out,food
+2022-05-18,Fakta,NA,-150.65,-20.26,NA,NA,Revolut DKK,supermarket,out,food
+2022-05-20,Meny,NA,-385.05,-51.76,NA,NA,Revolut DKK,supermarket,out,food
+2022-05-21,Skype,NA,NA,-5,NA,NA,Revolut EUR,phone bill,out,living
+2022-05-21,Fakta,NA,-234.11,-31.49,NA,NA,Revolut DKK,supermarket,out,food
+2022-05-22,Lebara Denmark Aps,NA,-49,-6.59,NA,NA,Revolut DKK,phone bill,out,living
+2022-05-22,Meny,NA,-231.95,-31.18,NA,NA,Revolut DKK,supermarket,out,food
+2022-05-24,MobilePay Jim,NA,-146,-19.64,NA,NA,DanskeBank,eat out,out,food
+2022-05-24,Fakta,NA,-3,-0.4,NA,NA,Revolut DKK,supermarket,out,food
+2022-05-24,Fakta,NA,-91.95,-12.37,NA,NA,Revolut DKK,supermarket,out,food
+2022-05-25,Lønoverførsel,NA,4822.05,648.2,NA,NA,DanskeBank,salary,in,in
+2022-05-25,Second salary in,NA,8500,1141.69,NA,NA,DanskeBank,salary,in,in
+2022-05-25,rent,NA,-8500,-1141.69,NA,NA,DanskeBank,rent,out,accommodation
+2022-05-26,Pizza,NA,-165,-22.19,NA,NA,Revolut DKK,eat out,out,food
+2022-05-27,Pasta,NA,-28,-3.77,NA,NA,Revolut DKK,caroline visits,out,living
+2022-05-27,Bus,NA,NA,0,NA,0,Revolut GBP,caroline visits,out,living
+2022-05-27,Irma,NA,-98.9,-13.3,NA,NA,Revolut DKK,supermarket,out,food
+2022-05-27,7-Eleven,NA,-26.5,-3.56,NA,NA,Revolut DKK,supermarket,out,food
+2022-05-28,Joe & The Juice,NA,-105,-14.13,NA,NA,Revolut DKK,caroline visits,out,living
+2022-05-28,Pub,NA,NA,-5.18,NA,-4.4,Revolut GBP,out entertainment,out,living
+2022-05-30,Bus,NA,NA,-8.8,NA,-7.5,Revolut GBP,caroline visits,out,living
+2022-05-30,Pub,NA,NA,-17.24,NA,-14.7,Revolut GBP,out entertainment,out,living
+2022-05-30,Bar,NA,NA,-5.98,NA,-5.1,Revolut GBP,out entertainment,out,living
+2022-05-31,Burrito,NA,NA,-9.99,NA,-8.5,Revolut GBP,caroline visits,out,living
+2022-05-31,Cash,NA,NA,-23.51,NA,-20,Revolut GBP,cash,out,other
+2022-05-31,Coffee,NA,NA,-14.93,NA,-12.7,Revolut GBP,eat out,out,food
+2022-05-31,Indie bar,NA,NA,-12.17,NA,-10.35,Revolut GBP,out entertainment,out,living
+2022-05-31,Pret A Manger,NA,NA,-0.88,NA,-0.75,Revolut GBP,supermarket,out,food
+2022-06-01,Fakta,NA,-112.4,-15.11,NA,NA,Revolut DKK,supermarket,out,food
+2022-06-03,COVID test,NA,NA,-19.55,NA,NA,Revolut EUR,holiday activities,out,holidays
+2022-06-03,Meny,NA,-119.95,-16.13,NA,NA,Revolut DKK,supermarket,out,food
+2022-06-04,MobilePay Tessa,NA,-225,-30.27,NA,NA,DanskeBank,eat out,out,food
+2022-06-04,To Matthew,NA,-50,-6.73,NA,NA,Revolut DKK,eat out,out,food
+2022-06-05,Dot,NA,-118,-15.87,NA,NA,Revolut DKK,public transport,out,commuting
+2022-06-05,MobilePay Jamie,NA,-525.38,-70.66,NA,NA,DanskeBank,supermarket,out,food
+2022-06-06,Fakta,NA,-94.9,-12.76,NA,NA,Revolut DKK,supermarket,out,food
+2022-06-06,Fakta,NA,-92.65,-12.46,NA,NA,Revolut DKK,supermarket,out,food
+2022-06-09,Indbetaling,NA,90,12.11,NA,NA,DanskeBank,in other,in,in
+2022-06-10,Fakta,NA,-65.4,-8.79,NA,NA,Revolut DKK,supermarket,out,food
+2022-06-10,Fakta,NA,-109.4,-14.71,NA,NA,Revolut DKK,supermarket,out,food
+2022-06-11,Revolut Ltd,NA,-225,-30.26,NA,NA,Revolut DKK,eat out,out,food
+2022-06-11,Meny,NA,-180.8,-24.32,NA,NA,Revolut DKK,supermarket,out,food
+2022-06-12,Swimming,NA,-425,-57.18,NA,NA,Revolut DKK,fitness,out,sports
+2022-06-12,Bar,NA,-40,-5.38,NA,NA,Revolut DKK,out entertainment,out,living
+2022-06-12,Pub,NA,-103,-13.86,NA,NA,Revolut DKK,out entertainment,out,living
+2022-06-12,Ice cream,NA,-40,-5.38,NA,NA,Revolut DKK,out entertainment,out,living
+2022-06-12,Fakta,NA,-116.85,-15.72,NA,NA,Revolut DKK,supermarket,out,food
+2022-06-13,Fakta,NA,-190.05,-25.56,NA,NA,Revolut DKK,supermarket,out,food
+2022-06-15,Smoothie,NA,-24,-3.23,NA,NA,DanskeBank,fitness,out,sports
+2022-06-15,Fakta,NA,-85.55,-11.5,NA,NA,Revolut DKK,supermarket,out,food
+2022-06-16,Irma,NA,-94.95,-12.78,NA,NA,Revolut DKK,supermarket,out,food
+2022-06-17,From Bob,NA,75,10.09,NA,NA,Revolut DKK,in other,in,in
+2022-06-18,Joe & The Juice,NA,-124,-16.68,NA,NA,Revolut DKK,eat out,out,food
+2022-06-18,Irma,NA,-60.45,-8.13,NA,NA,Revolut DKK,supermarket,out,food
+2022-06-18,Norwegian airlines,NA,-999,-134.38,NA,NA,Revolut DKK,holiday travel,out,holidays
+2022-06-18,Norwegian airlines,NA,NA,-53.98,NA,NA,Revolut EUR,holiday travel,out,holidays
+2022-06-19,Wolt,NA,-259,-34.85,NA,NA,Revolut DKK,eat out,out,food
+2022-06-19,Meny,NA,-221.95,-29.87,NA,NA,Revolut DKK,supermarket,out,food
+2022-06-19,Norwegian airlines,NA,NA,-97.13,NA,NA,Revolut EUR,caroline visits,out,living
+2022-06-20,Lebara Denmark Aps,NA,-49,-6.59,NA,NA,Revolut DKK,phone bill,out,living
+2022-06-20,Fakta,NA,-88.15,-11.85,NA,NA,Revolut DKK,supermarket,out,food
+2022-06-20,Norwegian Air Shuttle,NA,NA,-44.98,NA,NA,Revolut EUR,holiday travel,out,holidays
+2022-06-20,Norwegian Air Shuttle,NA,NA,-19.62,NA,NA,Revolut EUR,caroline visits,out,living
+2022-06-20,Easyjet,NA,NA,-171.87,NA,-147.48,Revolut GBP,holiday travel,out,holidays
+2022-06-21,Wizz Air ,NA,NA,-51.99,NA,NA,Revolut EUR,holiday travel,out,holidays
+2022-06-21,Ryanair,NA,NA,-128.59,NA,NA,Revolut EUR,holiday travel,out,holidays
+2022-06-22,Take-out,NA,-29,-3.9,NA,NA,Revolut DKK,supermarket,out,food
+2022-06-22,Meny,NA,-170.95,-22.99,NA,NA,Revolut DKK,supermarket,out,food
+2022-06-22,Fakta,NA,-110.3,-14.84,NA,NA,Revolut DKK,supermarket,out,food
+2022-06-24,Lønoverførsel,NA,12434.05,1671.7,NA,NA,DanskeBank,salary,in,in
+2022-06-25,MobilePay Hugh,NA,-100,-13.44,NA,NA,DanskeBank,presents,out,extras
+2022-06-25,Rent,NA,-8500,-1141.69,NA,NA,DanskeBank,rent,out,accommodation
+2022-06-27,Joe & The Juice,NA,-119,-16.01,NA,NA,Revolut DKK,eat out,out,food
+2022-06-27,Apotek,NA,-187.15,-25.18,NA,NA,Revolut DKK,medical required,out,medical
+2022-06-27,Apotek,NA,-110.05,-14.8,NA,NA,Revolut DKK,medical required,out,medical
+2022-06-27,Metro,NA,-100,-13.45,NA,NA,Revolut DKK,public transport,out,commuting
+2022-06-27,Metro,NA,-100,-13.45,NA,NA,Revolut DKK,public transport,out,commuting
+2022-06-28,Burger,NA,-395,-53.14,NA,NA,Revolut DKK,eat out,out,food
+2022-06-28,Irma,NA,-46.2,-6.22,NA,NA,Revolut DKK,supermarket,out,food
+2022-06-28,Ryanair,NA,NA,-97.99,NA,NA,Revolut EUR,holiday travel,out,holidays
+2022-06-29,Joe & The Juice,NA,-124,-16.68,NA,NA,Revolut DKK,eat out,out,food
+2022-06-29,Fakta,NA,-161.8,-21.77,NA,NA,Revolut DKK,supermarket,out,food
+2022-06-29,Fakta,NA,-136.55,-18.37,NA,NA,Revolut DKK,supermarket,out,food
+2022-06-30,Irma,NA,-142.9,-19.23,NA,NA,Revolut DKK,supermarket,out,food
