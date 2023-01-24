@@ -54,17 +54,7 @@ body <- dashboardBody(
               
               # Explanatory text
               box("This is the home page. Explanatory text
-                             will be shown here.", width = 12),
-              
-              # User inputs
-              box(
-                
-                # Input 1 - master file
-                fileInput("master_file", 'Select your latest master file'),
-                
-                # Input 2 - dictionary file
-                fileInput("dictionary_file", 'Select your dictionary file')
-              )
+                             will be shown here.", width = 12)
             )
     ),
     ### Addition of new expenses                                            ####
@@ -72,10 +62,27 @@ body <- dashboardBody(
             
             # Output: Tabset w/ plot, summary, and table ----
             tabsetPanel(type = "tabs",
-                        tabPanel("Load & transform",
+                        tabPanel("Load",
+                                 box(
+                  "This is the verification page.  Select all relevant files 
+                  that are requested of you on this page and click the button 
+                  on the bottom of the left panel to merge all new expenses into
+                  one and automatically categorise these. Modify the 
+                  'Subcategories' field on the table that appears on the 'Edit' 
+                  tab until all values are correct. Note: right-clicking on rows
+                  allows you to add/remove rows. Once you are satisfied with the
+                  new data, click the button at the bottom of the table to add 
+                  this data to a new master file (the old one will not be 
+                  overwritten)."),
                                  box(
                                    # Left hand side only
-                                   width = 3,
+                                   width = 6,
+                                   
+                                   # Input 1 - master file
+                                   fileInput("master_file", 'Select your latest master file'),
+                                   
+                                   # Input 2 - dictionary file
+                                   fileInput("dictionary_file", 'Select your dictionary file'),
                                    
                                    # Input 3 - raw bank data
                                    fileInput("temp_bank_data_files", 
@@ -101,7 +108,7 @@ body <- dashboardBody(
                                  ),
                         tabPanel("Edit", 
                                  box(
-                                   # Right hand side only
+                                   # Left hand side only
                                    width = 9,
                                    
                                    # Modifiable box
@@ -109,21 +116,9 @@ body <- dashboardBody(
                                    
                                    # Action button to save modifications
                                    actionButton("save_edits", "Save my edits and add to new master file!",
-                                                style="color: #fff; background-color: #337ab7; border-color: #2e6da4")
+                                                style = "color: #fff; background-color: #337ab7; border-color: #2e6da4")
                                  )
-                                 ),
-                        
-                        tabPanel("About",
-                                 "This is the verification page. 
-                        
-                        Select all relevant files that are requested of you on this page and click the button on the bottom 
-                  of the left panel to merge all new expenses into one and automatically
-                  categorise these. Modify the table that appears on the right hand side
-                  until all values are correct, especially in terms of row addition/removal
-                  and the subcategory column. Once you are satisfied with the new data,
-                  click the button at the bottom of the table to add this data to a new 
-                  master file."
-                        )
+                                 )
             )
     ),
     
@@ -267,17 +262,20 @@ server <- function(input, output) {
       rhandsontable(
         df_new_expenses_classified %>% 
           mutate(subcategory = as.factor(subcategory)) %>% 
-          select(date, description, amount_var, bank, subcategory)) %>%
+          select(date, description, amount_var, bank, subcategory),
+        height = 500) %>%
         hot_cols(colWidths = c(100, 150, 100, 100, 100)) %>%
         hot_table(highlightCol = TRUE, highlightRow = TRUE)
+      
     })
     
     # Give user a notification if table has appeared
     if(nrow(df_new_expenses_classified) > 1) {
       showNotification(
-        "Script ran successfully! Now modify the estimated 'subcategory' values in
-      the table such that they match the category you would place these in, and
-      hit the save button at the bottom of the table.",
+        "Script ran successfully! Now head to the 'Edit' tab and modify the 
+        predicted 'subcategory' values in the table such that they match the
+        category you would place these in. Hit the 'Save my edits and add to new
+        master file!' button at the bottom of the table when you are done.",
         type = "warning", duration = NULL)
     }
     
@@ -308,6 +306,14 @@ server <- function(input, output) {
                        here::here('data', 'masters', 
                                   str_c('master_', format(Sys.Date(), "%Y%m%d"),
                                         '.csv', sep = '')))
+      
+      # Give user a notification if save has been successful
+      showNotification(
+        stringr::str_c(
+          "Edits saved successfully! A new 'master_", 
+          format(Sys.Date(), "%Y%m%d"),
+          ".csv'", "file has been saved to the data/masters directory."),
+          type = "warning", duration = NULL)
     }
     )
     
