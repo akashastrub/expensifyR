@@ -69,55 +69,61 @@ body <- dashboardBody(
     ),
     ### Addition of new expenses                                            ####
     tabItem(tabName = "add_new_expenses",
-            h2("Tab to verify categorisation of expenses"),
-            fluidRow(
-              
-              # Add new expenses text
-              box("This is the verification page. Select all relevant files that are 
-                  requested of you on this page and click the button on the bottom 
+            
+            # Output: Tabset w/ plot, summary, and table ----
+            tabsetPanel(type = "tabs",
+                        tabPanel("Load & transform",
+                                 box(
+                                   # Left hand side only
+                                   width = 3,
+                                   
+                                   # Input 3 - raw bank data
+                                   fileInput("temp_bank_data_files", 
+                                             'Select your new bank data files', 
+                                             multiple = TRUE
+                                             ),
+                                   
+                                   # Input 4 - currency of choice
+                                   selectInput("master_currency", 
+                                               "What is your currency of choice?",
+                                               c("EUROs" = "eur",
+                                                 "US Dollars" = "usd",
+                                                 "GB Pounds" = "gbp",
+                                                 "Swiss Francs" = "chf")
+                                               ),
+                                   
+                                   # Action button to run script
+                                   actionButton("add_new_expenses_button", 
+                                                "Merge and categorise my new expenses!",
+                                                style = "color: #fff; background-color: #337ab7; border-color: #2e6da4"
+                                                )
+                                   )
+                                 ),
+                        tabPanel("Edit", 
+                                 box(
+                                   # Right hand side only
+                                   width = 9,
+                                   
+                                   # Modifiable box
+                                   rHandsontableOutput("unverified_expenses_table"),
+                                   
+                                   # Action button to save modifications
+                                   actionButton("save_edits", "Save my edits and add to new master file!",
+                                                style="color: #fff; background-color: #337ab7; border-color: #2e6da4")
+                                 )
+                                 ),
+                        
+                        tabPanel("About",
+                                 "This is the verification page. 
+                        
+                        Select all relevant files that are requested of you on this page and click the button on the bottom 
                   of the left panel to merge all new expenses into one and automatically
                   categorise these. Modify the table that appears on the right hand side
                   until all values are correct, especially in terms of row addition/removal
                   and the subcategory column. Once you are satisfied with the new data,
                   click the button at the bottom of the table to add this data to a new 
-                  master file.", width = 12),
-              
-              # User inputs
-              box(
-                # Left hand side only
-                width = 3,
-                
-                # Input 3 - raw bank data
-                fileInput("temp_bank_data_files", 
-                          'Select your new bank data files', 
-                          multiple = TRUE),
-                
-                # Input 4 - currency of choice
-                selectInput("master_currency", 
-                            "What is your currency of choice?",
-                            c("EUROs" = "eur",
-                              "US Dollars" = "usd",
-                              "GB Pounds" = "gbp",
-                              "Swiss Francs" = "chf")),
-                
-                # Action button to run script
-                actionButton("add_new_expenses_button", 
-                             "Merge and categorise my new expenses!",
-                             style = "color: #fff; background-color: #337ab7; border-color: #2e6da4")
-              ),
-              
-              # Modifiable table
-              box(
-                # Right hand side only
-                width = 9,
-                
-                # Modifiable box
-                rHandsontableOutput("unverified_expenses_table"),
-                
-                # Action button to save modifications
-                actionButton("save_edits", "Save my edits and add to new master file!",
-                             style="color: #fff; background-color: #337ab7; border-color: #2e6da4")
-              )
+                  master file."
+                        )
             )
     ),
     
