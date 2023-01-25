@@ -64,7 +64,7 @@ body <- dashboardBody(
             tabsetPanel(type = "tabs",
                         tabPanel("Load",
                                  box(
-                  "This is the verification page.  Select all relevant files 
+                                   "This is the verification page.  Select all relevant files 
                   that are requested of you on this page and click the button 
                   on the bottom of the left panel to merge all new expenses into
                   one and automatically categorise these. Modify the 
@@ -88,7 +88,7 @@ body <- dashboardBody(
                                    fileInput("temp_bank_data_files", 
                                              'Select your new bank data files', 
                                              multiple = TRUE
-                                             ),
+                                   ),
                                    
                                    # Input 4 - currency of choice
                                    selectInput("master_currency", 
@@ -97,15 +97,15 @@ body <- dashboardBody(
                                                  "US Dollars" = "usd",
                                                  "GB Pounds" = "gbp",
                                                  "Swiss Francs" = "chf")
-                                               ),
+                                   ),
                                    
                                    # Action button to run script
                                    actionButton("add_new_expenses_button", 
                                                 "Merge and categorise my new expenses!",
                                                 style = "color: #fff; background-color: #337ab7; border-color: #2e6da4"
-                                                )
                                    )
-                                 ),
+                                 )
+                        ),
                         tabPanel("Edit", 
                                  box(
                                    # Left hand side only
@@ -115,10 +115,12 @@ body <- dashboardBody(
                                    rHandsontableOutput("unverified_expenses_table"),
                                    
                                    # Action button to save modifications
-                                   actionButton("save_edits", "Save my edits and add to new master file!",
-                                                style = "color: #fff; background-color: #337ab7; border-color: #2e6da4")
+                                   downloadButton(
+                                     "download_new_master_file", 
+                                     "Save my edits and download new master file!",
+                                     style = "color: #fff; background-color: #337ab7; border-color: #2e6da4")
                                  )
-                                 )
+                        )
             )
     ),
     
@@ -164,7 +166,7 @@ body <- dashboardBody(
 )
 
 
-## UI                                                                       ####
+## Finalise UI                                                              ####
 ui <- dashboardPage(header, sidebar, body)
 
 server <- function(input, output) {
@@ -282,39 +284,44 @@ server <- function(input, output) {
     ### Save verified new expenses to master upon user click                  ####
     
     # Save edits button
-    observeEvent(input$save_edits, {
-      
-      # Convert hands-on-table to R dataframe
-      saved_df <- isolate(hot_to_r(input$unverified_expenses_table)) %>% 
-        mutate(subcategory = as.character(subcategory)) %>% 
-        left_join(df_new_expenses_classified,
-                  by = c("date", "description", amount_var, "bank", "subcategory"))
-      
-      # Load category dictionary
-      category_dict <- readr::read_csv(as.character(input$dictionary_file$datapath))
-      
-      # Load latest master file
-      latest_master_file <- readr::read_csv(as.character(input$master_file$datapath))
-      
-      # Bind new expenses (with category & direction) to previous version of master
-      new_master <- rbind(latest_master_file, 
-                          saved_df %>% left_join(category_dict, by = "subcategory")) %>% 
-        arrange(date)
-      
-      # Save file
-      readr::write_csv(new_master, 
-                       here::here('data', 'masters', 
-                                  str_c('master_', format(Sys.Date(), "%Y%m%d"),
-                                        '.csv', sep = '')))
-      
-      # Give user a notification if save has been successful
-      showNotification(
-        stringr::str_c(
-          "Edits saved successfully! A new 'master_", 
-          format(Sys.Date(), "%Y%m%d"),
-          ".csv'", "file has been saved to the data/masters directory."),
-          type = "warning", duration = NULL)
-    }
+    output$download_new_master_file <- downloadHandler(
+      filename = function() {
+        str_c('master_', 
+              format(Sys.Date(), "%Y%m%d"),
+              '.csv', 
+              sep = '')
+      },
+      content = function(file) {
+        
+        # Convert hands-on-table to R dataframe
+        saved_df <- isolate(hot_to_r(input$unverified_expenses_table)) %>% 
+          mutate(subcategory = as.character(subcategory)) %>% 
+          left_join(df_new_expenses_classified,
+                    by = c("date", "description", amount_var, "bank", "subcategory"))
+        
+        # Load category dictionary
+        category_dict <- readr::read_csv(as.character(input$dictionary_file$datapath))
+        
+        # Load latest master file
+        latest_master_file <- readr::read_csv(as.character(input$master_file$datapath))
+        
+        # Bind new expenses (with category & direction) to previous version of master
+        new_master <- rbind(latest_master_file, 
+                            saved_df %>% left_join(category_dict, by = "subcategory")) %>% 
+          arrange(date) %>% 
+          as.data.frame()
+        
+        # Save file
+        readr::write_csv(new_master, file)
+        
+        # Give user a notification if save has been successful
+        # showNotification(
+        #   stringr::str_c(
+        #     "Edits saved successfully! A new 'master_", 
+        #     format(Sys.Date(), "%Y%m%d"),
+        #     ".csv'", "file has been saved to the data/masters directory."),
+        #     type = "warning", duration = NULL)
+      }
     )
     
   })
@@ -382,7 +389,7 @@ server <- function(input, output) {
   
   # Plot graphs
   observe({
-  
+    
     # Wait for input to run script
     req(input$analytics_master_file)
     req(input$analytics_date_range)
