@@ -4,7 +4,7 @@
 # Load required libraries
 libraries <- c(
   "dplyr", 
-  "readxl", 
+  "readxl",
   "lubridate", 
   "stringr",
   "shinydashboard",
@@ -20,7 +20,7 @@ for (l in libraries) {
 
 # Load required functions
 import_src_functions <- list.files(
-  here::here("app", "src"),
+  here::here("src"),
   # ignore potential non .R files, for example, .Rmd
   pattern = "\\.R$", 
   full.names = TRUE,
@@ -33,7 +33,7 @@ rm(import_src_functions, libraries, l)
 
 # UI                                                                        ####
 ## Header                                                                   ####
-header <- dashboardHeader(title = "Personal Expenses app")
+header <- dashboardHeader(title = "expensifyR")
 
 ## Sidebar                                                                  ####
 sidebar <- dashboardSidebar(
@@ -49,34 +49,61 @@ body <- dashboardBody(
   tabItems(
     ### Home Page                                                           ####
     tabItem(tabName = "home",
-            h2("Home Page"),
+            h2("Welcome to expensifyR!"),
             fluidRow(
               
               # Explanatory text
-              box("This is the home page. Explanatory text
-                             will be shown here.", width = 12)
+              box("The expensifyR app allows expats with expenses across 
+              multiple countries, banks, currencies and formats to easily manage
+              their expenses. 
+              
+              
+              In order to do add new expenses to your 'master' file, please
+              navigate to the 'Add new expenses' tab and follow the instructions. 
+              
+              
+              In order to visualise past expenses, e.g. for budgeting and 
+              exploratory purposes, please navigate to the 'Analyse past 
+              expenses' tab and upload the relevant 'master' file. 
+              
+              
+              No personal or financial data is collected from the package 
+              developers, or app hosting platform. 
+              
+              
+              Please note that as of yet:
+              - Users are required to be onboarded by the app developers in order
+              to begin using the app (WIP)
+              - The following raw bank data uploads are supported: Natwest (GBP),
+              DanskeBank (DKK), Revolut (DKK), Revolut (USD), Revolut (GBP), 
+              Revolut (EUR). Additional banks can be added should users need.
+              
+              Please report any issues (bugs and/or requests for additional 
+              features [here](https://github.com/akashastrub/expensifyR/issues).",
+                  width = 12)
             )
     ),
     ### Addition of new expenses                                            ####
     tabItem(tabName = "add_new_expenses",
-            
+            h2("Add new expenses"),
             # Output: Tabset w/ plot, summary, and table ----
             tabsetPanel(type = "tabs",
                         tabPanel("Load",
                                  box(
-                                   "This is the verification page.  Select all relevant files 
-                  that are requested of you on this page and click the button 
-                  on the bottom of the left panel to merge all new expenses into
-                  one and automatically categorise these. Modify the 
-                  'Subcategories' field on the table that appears on the 'Edit' 
-                  tab until all values are correct. Note: right-clicking on rows
-                  allows you to add/remove rows. Once you are satisfied with the
-                  new data, click the button at the bottom of the table to add 
-                  this data to a new master file (the old one will not be 
-                  overwritten)."),
+                                   # Left hand side only
+                                   width = 3,
+                                   
+                                   # Text 
+                  "This is the 'Add new expenses' tab. Select all relevant files 
+                  and options that are requested of you on the right hand side 
+                  of this page, and click the 'Merge and categorise my new 
+                  expenses!' button on the bottom of the panel. This will merge 
+                  all new expenses into one file and automatically categorise 
+                  these, using past data. Head to the 'Edit' page when you are 
+                  notified to do so."),
                                  box(
                                    # Left hand side only
-                                   width = 6,
+                                   width = 9,
                                    
                                    # Input 1 - master file
                                    fileInput("master_file", 'Select your latest master file'),
@@ -107,8 +134,24 @@ body <- dashboardBody(
                                  )
                         ),
                         tabPanel("Edit", 
+
                                  box(
-                                   # Left hand side only
+                                   # Left hand side
+                                    width = 3,
+                                    
+                        "Modify the predicted 'subcategory' field in the table 
+                        on the right, such that the subcategory matches the 
+                        subcategory that you would place the expenses in 
+                        manually. Note: right-clicking on rows allows you to 
+                        add/remove rows. All cells can be modified, much like an
+                        Excel program. Once you are satisfied with the new data,
+                        click the 'Save my edits and download new master file!'
+                        button at the bottom of the table to download your new 
+                        master file (the old one will not be overwritten)."
+                        ),
+                                 
+                                 box(
+                                   # Right hand side
                                    width = 9,
                                    
                                    # Modifiable box
@@ -126,18 +169,24 @@ body <- dashboardBody(
     
     ### Analysis of past expenses                                           ####
     tabItem(tabName = "analyse_past_expenses",
-            h2("Tab to visualise expenses"),
+            h2("Analyse past expenses"),
             fluidRow(
               
               # Analytics text
-              box("This is the analytics page. Explanatory text
-                             will be shown here.", width = 12),
-              
-              # User inputs
               box(
-                # Left hand side only
+                # Left hand side
                 width = 3,
                 
+                # Text
+                "This is the 'Analyse past expenses' tab. The purpose of this 
+                tab is to allow you to select a specific 'master' file you would 
+                like to analyse, and use the interactive graphs to to the right
+                to understand your personal finances.",
+                
+                # Spacer
+                h4(""),
+                
+                # User inputs
                 # Input 5 - master file
                 fileInput("analytics_master_file", 
                           'Select the master file you wish to analyse'),
@@ -274,10 +323,7 @@ server <- function(input, output) {
     # Give user a notification if table has appeared
     if(nrow(df_new_expenses_classified) > 1) {
       showNotification(
-        "Script ran successfully! Now head to the 'Edit' tab and modify the 
-        predicted 'subcategory' values in the table such that they match the
-        category you would place these in. Hit the 'Save my edits and add to new
-        master file!' button at the bottom of the table when you are done.",
+        "Script ran successfully! Now head to the 'Edit' tab",
         type = "warning", duration = NULL)
     }
     
@@ -419,7 +465,7 @@ server <- function(input, output) {
       mutate(month = lubridate::month(date)) %>%
       mutate(category = stringr::str_replace(category, ' ', '_')) %>%
       group_by(category) %>%
-      summarise(amount = round(sum(amount_eur)/max(month), 0)) %>%
+      summarise(amount = round(sum(amount_eur)/n_distinct(month), 0)) %>%
       ungroup() %>% 
       arrange(desc(amount))
     
@@ -438,7 +484,7 @@ server <- function(input, output) {
       mutate(month = lubridate::month(date)) %>%
       mutate(category = stringr::str_replace(category, ' ', '_')) %>%
       group_by(category) %>%
-      summarise(amount = round(sum(amount_eur)/max(month), 0)) %>%
+      summarise(amount = round(sum(amount_eur)/n_distinct(month), 0)) %>%
       ungroup() %>%
       mutate(category = factor(category,
                                l_variable_order#,
