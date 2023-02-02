@@ -36,10 +36,6 @@ body <- dashboardBody(
                 expenses' tab and upload the relevant 'master' file. <br/>
                 <br/>
               
-                No personal or financial data is collected from the package 
-                developers, or app hosting platform. <br/>
-                <br/>
-              
                 Please note that as of yet: <br/>
                 - Users are required to be onboarded by the app developers in order
                 to begin using the app (WIP) <br/>
