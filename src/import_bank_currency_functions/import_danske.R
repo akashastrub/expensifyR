@@ -2,6 +2,20 @@
 
 import_danske <- function(path, currency = "dkk") {
   
+  # Identify file encoding
+  file_encoding <- readr::guess_encoding(path, n_max = 1000) %>% 
+    head(1) %>% 
+    pull(encoding)
+  
+  # Change file encoding to UTF-8
+  writeLines(
+    iconv(
+      readLines(path), 
+      from = file_encoding, 
+      to = "UTF-8"), 
+    file(path, encoding = "UTF-8")
+  )
+  
   # Import data and rename
   df <- read.csv(path) %>% 
     rename(

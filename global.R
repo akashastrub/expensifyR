@@ -11,6 +11,7 @@ library(shiny)
 library(reactable)
 library(rhandsontable)
 library(plotly)
+library(readr)
 
 # Load required functions
 import_src_functions <- list.files(
