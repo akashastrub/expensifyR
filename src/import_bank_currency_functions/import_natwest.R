@@ -2,6 +2,9 @@
 
 import_natwest <- function(path, currency = "gbp") {
   
+  # Convert file to UTF-8 file format
+  to_utf8(path)
+  
   df <- readr::read_csv(path) %>% 
     rename(
       c(date = Date,

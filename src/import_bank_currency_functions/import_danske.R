@@ -2,6 +2,9 @@
 
 import_danske <- function(path, currency = "dkk") {
   
+  # Convert file to UTF-8 file format
+  to_utf8(path)
+  
   # Import data and rename
   df <- read.csv(path) %>% 
     rename(
