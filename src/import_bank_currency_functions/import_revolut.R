@@ -2,6 +2,9 @@
 # Function input variable as currency
 import_revolut <- function(path, currency) {
 
+  # Convert file to UTF-8 file format
+  to_utf8(path)
+  
   # User pre-selected currency
   var <- str_c("amount", tolower(currency), sep = "_")
   
