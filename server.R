@@ -7,7 +7,7 @@ server <- function(input, output) {
   # When user clicks add_new_expenses_button, merge and categorise expenses.
   # When completed, show user the resulting table.
   observeEvent(input$add_new_expenses_button, {
-    
+
     ### Input, modify, and combine bank data                                ####
     # Location of temp files with new expenses
     path_raw_bank_data_files <- as.character(input$temp_bank_data_files$datapath)
@@ -44,9 +44,13 @@ server <- function(input, output) {
       
       # Convert amounts
       if (nrow(df_temp_addon) > 0) {
-        df_temp_addon <- convert_amount(df = df_temp_addon, 
-                                        currency_in = currency, 
-                                        currency_out = input$master_currency)
+        if (currency != input$master_currency) {
+          df_temp_addon <- convert_amount(
+            df = df_temp_addon, 
+            currency_in = currency, 
+            currency_out = input$master_currency)
+          }
+        
         
         # Bind bank-currency specific data to other data
         df_temp <- df_temp %>% bind_rows(df_temp_addon)
@@ -89,6 +93,9 @@ server <- function(input, output) {
     # Save master currency for column selection in rhandsontable
     amount_var <- str_c("amount", input$master_currency, sep = "_")
     
+    # Load category dictionary
+    category_dict <- readr::read_csv(as.character(input$dictionary_file$datapath))
+    
     # Show user the output on a table
     output$unverified_expenses_table <- renderRHandsontable({
       rhandsontable(
@@ -96,6 +103,10 @@ server <- function(input, output) {
           mutate(subcategory = as.factor(subcategory)) %>% 
           select(date, description, amount_var, bank, subcategory),
         height = 500) %>%
+        hot_col("subcategory", 
+                allowInvalid = FALSE, 
+                type = "dropdown", 
+                source = (category_dict %>% pull(subcategory))) %>% 
         hot_cols(colWidths = c(100, 150, 100, 100, 100)) %>%
         hot_table(highlightCol = TRUE, highlightRow = TRUE)
       
@@ -216,7 +227,7 @@ server <- function(input, output) {
   
   # Plot graphs
   observe({
-    
+
     # Wait for input to run script
     req(input$analytics_master_file)
     req(input$analytics_date_range)
@@ -259,7 +270,6 @@ server <- function(input, output) {
       append(df_variable_order_out$category)
     
     print(l_variable_order)
-    
     # Plot graph
     df_waterfall <- analytics_master_file %>%
       mutate(month = lubridate::month(date)) %>%
@@ -283,13 +293,16 @@ server <- function(input, output) {
                        amount = 0,
                        measure = "total",
                        text = "Total")) %>%
-      arrange(category,
-              l_variable_order %>% append("Monthly profit after tax")#,
+      arrange(
+        factor(
+          category,
+          levels = (l_variable_order %>% append("Monthly profit after tax"))#,
               # levels = c("in", "accommodation", "mum_payment",
               #            "food", "holidays", "living", "extras",
               #            "commuting", "sports", "medical",
               #            "other", "student_loan", "Monthly profit after tax")
-      )
+          )
+        )
     
     # Create plot
     fig_waterfall <- plot_ly(

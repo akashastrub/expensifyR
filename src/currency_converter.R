@@ -9,7 +9,8 @@ convert_amount <- function(df, currency_in, currency_out){
     toupper(currency_out),
     min(df$date), 
     max(df$date)
-  )
+    ) %>% 
+    mutate(date = lubridate::ymd(date))
   
   # Convert currency-specific column name in df_ex to generic name
   colnames(df_ex) <- c("date", "exchange")
