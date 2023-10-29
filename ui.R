@@ -89,7 +89,7 @@ body <- dashboardBody(
                               multiple = TRUE),
                    
                    # Input 4 - currency of choice
-                   selectInput("master_currency",
+                   selectInput("master_currency_new_expenses",
                                "What is your currency of choice?",
                                c("EUROs" = "eur",
                                  "US Dollars" = "usd",
@@ -169,13 +169,22 @@ body <- dashboardBody(
                 fileInput("analytics_master_file", 
                           'Select the master file you wish to analyse'),
                 
-                # Input 6 - time period desired
+                # Input 6 - currency of choice
+                selectInput("master_currency_analytics",
+                            "What is your currency of choice?",
+                            c("EUROs" = "eur",
+                              "US Dollars" = "usd",
+                              "GB Pounds" = "gbp",
+                              "Swiss Francs" = "chf")
+                ),
+                
+                # Input 7 - time period desired
                 uiOutput("analytics_date_range"),
                 
-                # Input 7 - categories
+                # Input 8 - categories
                 uiOutput("analytics_categories"),
                 
-                # Input 8 - subcategories
+                # Input 9 - subcategories
                 uiOutput("analytics_subcategories")
               ),
               
