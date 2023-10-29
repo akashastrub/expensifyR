@@ -44,11 +44,11 @@ server <- function(input, output) {
       
       # Convert amounts
       if (nrow(df_temp_addon) > 0) {
-        if (currency != input$master_currency) {
+        if (currency != input$master_currency_new_expenses) {
           df_temp_addon <- convert_amount(
             df = df_temp_addon, 
             currency_in = currency, 
-            currency_out = input$master_currency)
+            currency_out = input$master_currency_new_expenses)
           }
         
         
@@ -91,7 +91,7 @@ server <- function(input, output) {
     print(df_new_expenses_classified)
     
     # Save master currency for column selection in rhandsontable
-    amount_var <- str_c("amount", input$master_currency, sep = "_")
+    amount_var <- str_c("amount", input$master_currency_new_expenses, sep = "_")
     
     # Load category dictionary
     category_dict <- readr::read_csv(as.character(input$dictionary_file$datapath))
@@ -272,10 +272,15 @@ server <- function(input, output) {
     print(l_variable_order)
     # Plot graph
     df_waterfall <- analytics_master_file %>%
-      mutate(month = lubridate::month(date)) %>%
+      mutate(ym = stringr::str_c(
+        lubridate::year(date), 
+        lubridate::month(date)
+      )) %>% 
       mutate(category = stringr::str_replace(category, ' ', '_')) %>%
+      rename(amount_currency = stringr::str_c(
+        "amount", input$master_currency_analytics, sep = "_")) %>% 
       group_by(category) %>%
-      summarise(amount = round(sum(amount_eur)/n_distinct(month), 0)) %>%
+      summarise(amount = round(sum(amount_currency)/n_distinct(ym), 0)) %>%
       ungroup() %>%
       mutate(category = factor(category,
                                l_variable_order#,
