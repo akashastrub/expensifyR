@@ -1,0 +1,30 @@
+Package: expensifyR
+Title: The expensifyR Shiny app allows users to easily manage their expenses across multiple banks and currencies. 
+Version: 0.0.0.9000
+Authors@R: 
+    person("Akasha", "Strub", , "akasha.strub@gmail.com", role = c("aut", "cre"))
+Description: The expensifyR Shiny app allows users to easily manage their expenses.
+    It includes functions to import raw data downloaded from your bank, compile
+    these into one dataframe, predict their category based on past data, and 
+    visualisation tools to track your spending patterns. This tool is especially 
+    relevant for expats with expenses across multiple countries, banks, 
+    currencies and formats.
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Imports: 
+    dplyr,
+    lubridate,
+    plotly,
+    priceR,
+    reactable,
+    readr,
+    readxl,
+    rhandsontable,
+    shiny,
+    shinydashboard,
+    stringr
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
