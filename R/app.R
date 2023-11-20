@@ -4,7 +4,7 @@
 #' @import dplyr readxl lubridate stringr shinydashboard shiny reactable rhandsontable plotly readr
 #' @export
 #'
-myApp <- function() {
+run_app <- function() {
   # UI                                                                      ####
   ui <- shinydashboard::dashboardPage(
     ## Header                                                               ####

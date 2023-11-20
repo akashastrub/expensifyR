@@ -8,7 +8,6 @@
 #' @export
 #'
 import_revolut <- function(path, currency) {
-
   # Convert file to UTF-8 file format
   expensifyR::to_utf8(path)
 
@@ -17,24 +16,31 @@ import_revolut <- function(path, currency) {
 
   # Read in CSV and manipulate it
   df <- readr::read_csv(path) %>%
-    dplyr::rename(
-      date = `Completed Date`,
-      description = `Description`) %>%
-    dplyr::mutate(date = lubridate::as_date(date),
-           amount_chf = NA,
-           amount_dkk = NA,
-           amount_eur = NA,
-           amount_usd = NA,
-           amount_gbp = NA,
-           bank = stringr::str_c("Revolut ", toupper(currency)))
+    dplyr::rename(date = `Completed Date`,
+                  description = `Description`) %>%
+    dplyr::mutate(
+      date = lubridate::as_date(date),
+      amount_chf = NA,
+      amount_dkk = NA,
+      amount_eur = NA,
+      amount_usd = NA,
+      amount_gbp = NA,
+      bank = stringr::str_c("Revolut ", toupper(currency))
+    )
 
   # Name variable according to currency
   df[var] <- df["Amount"]
 
   # Select relevant columns
   df <- df %>%
-    dplyr::select(date, description, amount_chf, amount_dkk, amount_eur, amount_usd,
-           amount_gbp, bank)
+    dplyr::select(date,
+                  description,
+                  amount_chf,
+                  amount_dkk,
+                  amount_eur,
+                  amount_usd,
+                  amount_gbp,
+                  bank)
 
   # Return output
   return(df)

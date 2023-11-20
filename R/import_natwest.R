@@ -8,16 +8,15 @@
 #' @export
 #'
 import_natwest <- function(path, currency = "gbp") {
-
   # Convert file to UTF-8 file format
   to_utf8(path)
 
   df <- readr::read_csv(path) %>%
-    dplyr::rename(
-      c(date = Date,
-        description = Description,
-        amount_gbp = Value)
-      ) %>%
+    dplyr::rename(c(
+      date = Date,
+      description = Description,
+      amount_gbp = Value
+    )) %>%
     ## Filter NA rows due to Natwest export
     dplyr::filter(!is.na(amount_gbp)) %>%
     dplyr::mutate(
@@ -27,7 +26,7 @@ import_natwest <- function(path, currency = "gbp") {
       amount_eur = NA,
       amount_dkk = NA,
       amount_usd = NA
-      )  %>%
+    )  %>%
     dplyr::select(
       date,
       description,
@@ -36,7 +35,7 @@ import_natwest <- function(path, currency = "gbp") {
       amount_eur,
       amount_usd,
       amount_gbp,
-      dplyr::  bank
+      bank
     )
 
   return(df)

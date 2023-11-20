@@ -7,8 +7,8 @@
 convert_amount(df, currency_in, currency_out)
 }
 \arguments{
-\item{df}{Dataframe with multiple currency columns, one of which must be
-converted to the other.}
+\item{df}{Dataframe with multiple currency columns, one of which (currency_in)
+is to be converted to the other (curency_out).}
 
 \item{currency_in}{Currency to be converted from.}
 

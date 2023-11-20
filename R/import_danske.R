@@ -8,15 +8,13 @@
 #' @export
 #'
 import_danske <- function(path, currency = "dkk") {
-
   # Convert file to UTF-8 file format
   expensifyR::to_utf8(path)
 
   # Import data and rename
   df <- readr::read_csv(path) %>%
-    dplyr::rename(
-      c('date' = 'Dato',
-        'description' = 'Tekst'))
+    dplyr::rename(c('date' = 'Dato',
+                    'description' = 'Tekst'))
 
   # Rename indexing due to Danish text
   colnames(df)[5] <- 'amount_dkk'
@@ -34,8 +32,14 @@ import_danske <- function(path, currency = "dkk") {
       amount_usd = NA,
       bank = "DanskeBank"
     ) %>%
-    dplyr::select(date, description, amount_chf, amount_dkk, amount_eur, amount_usd,
-           amount_gbp, bank)
+    dplyr::select(date,
+                  description,
+                  amount_chf,
+                  amount_dkk,
+                  amount_eur,
+                  amount_usd,
+                  amount_gbp,
+                  bank)
 
   # Return dataframe
   return(df)

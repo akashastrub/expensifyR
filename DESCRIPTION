@@ -1,5 +1,6 @@
 Package: expensifyR
-Title: The expensifyR Shiny app allows users to easily manage their expenses across multiple banks and currencies. 
+Title: The expensifyR Shiny app allows users to easily manage their expenses 
+    across multiple banks and currencies 
 Version: 0.0.0.9000
 Authors@R: 
     person("Akasha", "Strub", , "akasha.strub@gmail.com", role = c("aut", "cre"))
@@ -24,6 +25,7 @@ Imports:
     rhandsontable,
     shiny,
     shinydashboard,
+    purrr,
     stringr
 Suggests: 
     testthat (>= 3.0.0)
