@@ -5,6 +5,7 @@
 #' @export
 #'
 run_app <- function() {
+
   # UI                                                                      ####
   ui <- shinydashboard::dashboardPage(
     ## Header                                                               ####
@@ -212,9 +213,6 @@ run_app <- function() {
 
   # Server                                                                  ####
 
-
-  # Server                                                                  ####
-
   server <- function(input, output, session) {
 
     # Control notification
@@ -224,8 +222,8 @@ run_app <- function() {
     # When completed, show user the resulting table.
     shiny::observeEvent(input$add_new_expenses_button, {
 
-      ### Input, modify, and combine bank data                                ####
       # Location of temp files with new expenses
+      ### Input, modify, and combine bank data                                ####
       path_raw_bank_data_files <- as.character(input$temp_bank_data_files$datapath)
 
       # Create empty dataframe to populate iteratively
@@ -258,7 +256,7 @@ run_app <- function() {
         # Run function
         df_temp_addon <- eval(parse(text = expr))
 
-        # Convert amounts
+        # Convert amounts, if rows present and currencies not aligned
         if (nrow(df_temp_addon) > 0) {
           if (currency != input$master_currency_new_expenses) {
             df_temp_addon <- expensifyR::convert_amount(
@@ -267,7 +265,7 @@ run_app <- function() {
               currency_out = input$master_currency_new_expenses)
           }
 
-          # Bind bank-currency specific data to other data
+          # Bind bank-currency specific data to other new data
           df_temp <- dplyr::bind_rows(df_temp, df_temp_addon)
         }
       }
@@ -275,23 +273,20 @@ run_app <- function() {
       # Arrange by date
       df_temp <- dplyr::arrange(df_temp, date)
 
-      print(df_temp)
-
       ### Ensure the new bank data does not overlap with data already in the master    ####
 
       # Location of master files
       path_latest_master_file <- as.character(input$master_file$datapath)
 
       # Load the latest master file
-      latest_master_file <- readr::read_csv(path_latest_master_file)
+      df_old_master_file <- readr::read_csv(path_latest_master_file)
 
-      # Filter df_temp to only include expenses that occurred after the latest date
-      # on the latest master file
-      # TODO: make this better by filtering out rows that have already been processed
-      latest_master_file_max_date = dplyr::summarise(latest_master_file, max_date = max(date))
-      df_new_expenses <- dplyr::filter(df_temp, date > latest_master_file_max_date[[1]])
-
-      print(df_new_expenses)
+      # Compare rows by date, description, currency, etc.
+      df_new_expenses <- df_temp |>
+        dplyr::anti_join(
+          df_old_master_file,
+          by = c("date", "description", "amount_chf", "amount_dkk",
+                 "amount_eur", "amount_usd", "amount_gbp", "bank"))
 
       ### Classify new expenses                                               ####
       # Location of category classifier
@@ -301,9 +296,7 @@ run_app <- function() {
       df_new_expenses_classified <- expensifyR::classify_subcategories(
         df_new_expenses,
         path_category_dict = path_category_dict,
-        latest_master_file = latest_master_file)
-
-      print(df_new_expenses_classified)
+        df_old_master_file = df_old_master_file)
 
       # Save the master currency for column selection in rhandsontable
       amount_var <- stringr::str_c("amount", input$master_currency_new_expenses, sep = "_")
@@ -314,15 +307,16 @@ run_app <- function() {
       # Show the user the output on a table
       output$unverified_expenses_table <- rhandsontable::renderRHandsontable({
         rhandsontable::rhandsontable(
-          df_new_expenses_classified %>%
-            dplyr::mutate(subcategory = as.factor(subcategory)) %>%
+          df_new_expenses_classified  |>
+            dplyr::mutate(date = as.character(date),
+                          subcategory = as.factor(subcategory)) |>
             dplyr::select(date, description, amount_var, bank, subcategory),
-          height = 500) %>%
+          height = 500) |>
           rhandsontable::hot_col("subcategory",
                                  allowInvalid = FALSE,
                                  type = "dropdown",
-                                 source = (category_dict %>% dplyr::pull(subcategory))) %>%
-          rhandsontable::hot_cols(colWidths = c(100, 150, 100, 100, 100)) %>%
+                                 source = (category_dict |> dplyr::pull(subcategory))) |>
+          rhandsontable::hot_cols(colWidths = c(100, 150, 100, 100, 100)) |>
           rhandsontable::hot_table(highlightCol = TRUE, highlightRow = TRUE)
 
       })
@@ -347,33 +341,30 @@ run_app <- function() {
         content = function(file) {
 
           # Convert hands-on-table to R dataframe
-          saved_df <- shiny::isolate(rhandsontable::hot_to_r(input$unverified_expenses_table)) %>%
-            dplyr::mutate(subcategory = as.character(subcategory)) %>%
-            dplyr::left_join(df_new_expenses_classified,
+          saved_df <- shiny::isolate(rhandsontable::hot_to_r(input$unverified_expenses_table)) |>
+            dplyr::mutate(subcategory = as.character(subcategory)) |>
+            dplyr::left_join(df_new_expenses_classified |>
+                               dplyr::mutate(date = as.character(date)),
                              by = c("date", "description", amount_var, "bank", "subcategory"))
 
           # Load the category dictionary
           category_dict <- readr::read_csv(as.character(input$dictionary_file$datapath))
 
           # Load the latest master file
-          latest_master_file <- readr::read_csv(as.character(input$master_file$datapath))
+          df_old_master_file <- readr::read_csv(as.character(input$master_file$datapath))
 
           # Bind new expenses (with category & direction) to the previous version of the master
-          new_master <- dplyr::bind_rows(latest_master_file,
-                                         saved_df %>% dplyr::left_join(category_dict, by = "subcategory")) %>%
-            dplyr::arrange(date) %>%
+          new_master <- dplyr::bind_rows(
+            df_old_master_file |>
+              dplyr::mutate(date = as.character(date)),
+            saved_df |>
+              dplyr::left_join(category_dict, by = "subcategory")) |>
+            dplyr::mutate(date = lubridate::as_date(date)) |>
+            dplyr::arrange(date) |>
             as.data.frame()
 
           # Save the file
           readr::write_csv(new_master, file)
-
-          # Give the user a notification if the save has been successful
-          # shiny::showNotification(
-          #   stringr::str_c(
-          #     "Edits saved successfully! A new 'master_",
-          #     format(Sys.Date(), "%Y%m%d"),
-          #     ".csv'", "file has been saved to the data/masters directory."),
-          #     type = "warning", duration = NULL)
         }
       )
 
@@ -391,7 +382,7 @@ run_app <- function() {
       path_analytics_master_file <- as.character(input$analytics_master_file$datapath)
 
       # Dates to select from
-      min_max_dates <- readr::read_csv(path_analytics_master_file) %>%
+      min_max_dates <- readr::read_csv(path_analytics_master_file) |>
         dplyr::summarise(
           min_date = min(date),
           max_date = max(date)
@@ -408,10 +399,9 @@ run_app <- function() {
       })
 
       # Categories to select from
-      categories <- readr::read_csv(path_analytics_master_file) %>%
-        dplyr::distinct(category) %>%
-        as.list()
-      categories <- categories$category
+      categories <- readr::read_csv(path_analytics_master_file) |>
+        dplyr::distinct(category) |>
+        dplyr::pull(category)
 
       # Add category selection - based on the data
       output$analytics_categories <- shiny::renderUI({
@@ -424,10 +414,9 @@ run_app <- function() {
       })
 
       # Subcategories to select from
-      subcategories <- readr::read_csv(path_analytics_master_file) %>%
-        dplyr::distinct(subcategory) %>%
-        as.list()
-      subcategories <- subcategories$subcategory
+      subcategories <- readr::read_csv(path_analytics_master_file) |>
+        dplyr::distinct(subcategory) |>
+        dplyr::pull(subcategory)
 
       # Add subcategory selection - based on the data
       output$analytics_subcategories <- shiny::renderUI({
@@ -449,78 +438,65 @@ run_app <- function() {
 
       # Location of the file
       path_analytics_master_file <- as.character(input$analytics_master_file$datapath)
-      print(path_analytics_master_file)
 
       # Load master file
       analytics_master_file <- shiny::reactive(readr::read_csv(path_analytics_master_file))
 
       # Filter master file
-      analytics_master_file <- analytics_master_file() %>%
+      analytics_master_file <- analytics_master_file() |>
         # Filter to the desired date range
-        dplyr::filter(date > input$analytics_date_range[1]) %>%
-        dplyr::filter(date < input$analytics_date_range[2])
+        dplyr::filter(date >= input$analytics_date_range[1]) |>
+        dplyr::filter(date <= input$analytics_date_range[2])
 
       # Filter master file to desired categories and subcategories
-      analytics_master_file <- analytics_master_file %>%
-        dplyr::filter(category %in% input$analytics_selected_categories) %>%
+      analytics_master_file <- analytics_master_file |>
+        dplyr::filter(category %in% input$analytics_selected_categories) |>
         dplyr::filter(subcategory %in% input$analytics_selected_subcategories)
 
       #### Process master file for a waterfall graph                            ####
 
+      # Find number of distinct months
+      n_distinct_months <- analytics_master_file |>
+        dplyr::summarise(n_distinct_months = dplyr::n_distinct(lubridate::month(date))) |>
+        pull(n_distinct_months)
+
       # Find the order of variables for the master file
-      df_variable_order <- analytics_master_file %>%
-        dplyr::mutate(month = lubridate::month(date)) %>%
-        dplyr::mutate(category = stringr::str_replace(category, ' ', '_')) %>%
-        dplyr::group_by(category) %>%
-        dplyr::summarise(amount = round(sum(amount_eur)/dplyr::n_distinct(month), 0)) %>%
-        dplyr::ungroup() %>%
+      df_variable_order <- analytics_master_file |>
+        dplyr::mutate(month = lubridate::month(date)) |>
+        dplyr::rename(amount_currency = stringr::str_c(
+          "amount", input$master_currency_analytics, sep = "_")) |>
+        dplyr::mutate(category = stringr::str_replace(category, ' ', '_')) |>
+        dplyr::group_by(category) |>
+        dplyr::summarise(amount = round(sum(amount_currency)/n_distinct_months, 1)) |>
+        dplyr::ungroup() |>
         dplyr::arrange(dplyr::desc(amount))
 
-      df_variable_order_in <- df_variable_order %>% dplyr::filter(amount > 0)
+      df_variable_order_in <- df_variable_order |> dplyr::filter(amount > 0)
 
-      df_variable_order_out <- df_variable_order %>% dplyr::filter(amount <= 0) %>%
+      df_variable_order_out <- df_variable_order |> dplyr::filter(amount <= 0) |>
         dplyr::arrange(amount)
 
-      l_variable_order <- df_variable_order_in$category %>%
+      l_variable_order <- df_variable_order_in$category |>
         append(df_variable_order_out$category)
 
-      print(l_variable_order)
       # Plot graph
-      df_waterfall <- analytics_master_file %>%
-        dplyr::mutate(ym = stringr::str_c(
-          lubridate::year(date),
-          lubridate::month(date)
-        )) %>%
-        dplyr::mutate(category = stringr::str_replace(category, ' ', '_')) %>%
-        dplyr::rename(amount_currency = stringr::str_c(
-          "amount", input$master_currency_analytics, sep = "_")) %>%
-        dplyr::group_by(category) %>%
-        dplyr::summarise(amount = round(sum(amount_currency)/dplyr::n_distinct(ym), 0)) %>%
-        dplyr::ungroup() %>%
+      df_waterfall <- df_variable_order |>
         dplyr::mutate(category = factor(category,
-                                        l_variable_order#,
-                                        # levels = c("in", "accommodation", "mum_payment",
-                                        #            "food", "holidays", "living", "extras",
-                                        #            "commuting", "sports", "medical",
-                                        #            "other", "student_loan"))
-        )) %>%
-        dplyr::mutate(measure = "relative") %>%
+                                        l_variable_order
+        )) |>
+        dplyr::mutate(measure = "relative") |>
         dplyr::mutate(text = dplyr::case_when(
           amount > 0 ~ stringr::str_c('+', as.character(amount), sep = ''),
           TRUE ~ as.character(amount))
-        ) %>%
+        ) |>
         rbind(data.frame(category = "Monthly profit after tax",
                                 amount = 0,
                                 measure = "total",
-                                text = "Total")) %>%
+                                text = "Total")) |>
         dplyr::arrange(
           factor(
             category,
-            levels = (l_variable_order %>% append("Monthly profit after tax"))#,
-            # levels = c("in", "accommodation", "mum_payment",
-            #            "food", "holidays", "living", "extras",
-            #            "commuting", "sports", "medical",
-            #            "other", "student_loan", "Monthly profit after tax")
+            levels = (l_variable_order |> append("Monthly profit after tax"))
           )
         )
 
@@ -530,7 +506,7 @@ run_app <- function() {
         x = ~category, textposition = "outside", y= ~amount, text =~text,
         connector = list(line = list(color= "rgb(63, 63, 63)")))
 
-      fig_waterfall <- fig_waterfall %>%
+      fig_waterfall <- fig_waterfall |>
         plotly::layout(title = "Profit and loss statement",
                        xaxis = list(title = ""),
                        yaxis = list(title = ""),
