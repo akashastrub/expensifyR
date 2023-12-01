@@ -21,7 +21,7 @@ run_app <- function() {
     ## Body                                                                 ####
     body = shinydashboard::dashboardBody(
       shinydashboard::tabItems(
-        ### Home Page                                                       ####
+        ### Home Page tab                                                   ####
         shinydashboard::tabItem(tabName = "home",
                                 shiny::h2("Welcome to expensifyR!"),
                                 shiny::fluidRow(
@@ -55,11 +55,11 @@ run_app <- function() {
                 width = 12)
                                 )
         ),
-        ### Addition of new expenses                                            ####
+        ### Add new expenses tab                                            ####
         shinydashboard::tabItem(
           tabName = "add_new_expenses",
           shiny::h2("Add new expenses"),
-          # Output: Tabset w/ plot, summary, and table ----
+        #### Load data & set inputs                                         ####
           shiny::tabsetPanel(
             type = "tabs",
             shiny::tabPanel("Load",
@@ -70,7 +70,7 @@ run_app <- function() {
                     <br/>
 
                     Select all relevant files and options that are requested
-                    on the right hand side of this page, and click the
+                    on this page, and click the
                     'Merge and categorise my new expenses!' button on the bottom
                     of the panel. This will merge all new expenses into one file and automatically categorise
                     these, using past data. <br/>
@@ -110,6 +110,7 @@ run_app <- function() {
                       )
                     )
             ),
+            #### Editing of new expenses                                    ####
             shiny::tabPanel("Edit",
 
                                      shinydashboard::box(
@@ -151,7 +152,7 @@ run_app <- function() {
           )
         ),
 
-        ### Analysis of past expenses                                           ####
+        ### Analysis of past expenses tab                                   ####
         shinydashboard::tabItem(tabName = "analyse_past_expenses",
                                 shiny::h2("Analyse past expenses"),
                                 shiny::fluidRow(
@@ -164,7 +165,7 @@ run_app <- function() {
 
                 The purpose of this tab is to allow you to select a specific
                 'master' file you would like to analyse, and use the interactive
-                graphs to the right to explore your personal finances. <br/>
+                graphs to explore your personal finances. <br/>
                 <br/>"),
 
                 # Left hand side
@@ -212,18 +213,17 @@ run_app <- function() {
     skin = "black")
 
   # Server                                                                  ####
-
   server <- function(input, output, session) {
 
     # Control notification
     df_new_expenses_classified <- NULL
 
-    # When user clicks add_new_expenses_button, merge and categorise expenses.
-    # When completed, show user the resulting table.
+    ## Add new expenses tab                                                 ####
+    ### Loop through new expenses & convert to common data model            ####
+    # When user clicks add_new_expenses_button, merge new expenses.
     shiny::observeEvent(input$add_new_expenses_button, {
 
       # Location of temp files with new expenses
-      ### Input, modify, and combine bank data                                ####
       path_raw_bank_data_files <- as.character(input$temp_bank_data_files$datapath)
 
       # Create empty dataframe to populate iteratively
@@ -273,7 +273,7 @@ run_app <- function() {
       # Arrange by date
       df_temp <- dplyr::arrange(df_temp, date)
 
-      ### Ensure the new bank data does not overlap with data already in the master    ####
+      ### Ensure new bank data does not overlap with data already in master ####
 
       # Location of master files
       path_latest_master_file <- as.character(input$master_file$datapath)
@@ -281,20 +281,21 @@ run_app <- function() {
       # Load the latest master file
       df_old_master_file <- readr::read_csv(path_latest_master_file)
 
-      # Compare rows by date, description, currency, etc.
+      # Compare rows by date, description, currency, etc. to ensure new
+      # expenses do not overlap old expenses
       df_new_expenses <- df_temp |>
         dplyr::anti_join(
           df_old_master_file,
           by = c("date", "description", "amount_chf", "amount_dkk",
                  "amount_eur", "amount_usd", "amount_gbp", "bank"))
 
-      ### Classify new expenses                                               ####
+      ### Classify new expenses & output rhandsontable                      ####
       # Location of category classifier
       path_category_dict <- as.character(input$dictionary_file$datapath)
 
       # Classify new expenses' subcategories
       df_new_expenses_classified <- expensifyR::classify_subcategories(
-        df_new_expenses,
+        df_new_expenses = df_new_expenses,
         path_category_dict = path_category_dict,
         df_old_master_file = df_old_master_file)
 
@@ -318,7 +319,6 @@ run_app <- function() {
                                  source = (category_dict |> dplyr::pull(subcategory))) |>
           rhandsontable::hot_cols(colWidths = c(100, 150, 100, 100, 100)) |>
           rhandsontable::hot_table(highlightCol = TRUE, highlightRow = TRUE)
-
       })
 
       # Give the user a notification if the table has appeared
@@ -328,7 +328,7 @@ run_app <- function() {
           type = "warning", duration = NULL)
       }
 
-      ### Save verified new expenses to master upon user click                  ####
+      ### Download new, verified master file upon user click                ####
 
       # Save edits button
       output$download_new_master_file <- shiny::downloadHandler(
@@ -341,17 +341,16 @@ run_app <- function() {
         content = function(file) {
 
           # Convert hands-on-table to R dataframe
-          saved_df <- shiny::isolate(rhandsontable::hot_to_r(input$unverified_expenses_table)) |>
-            dplyr::mutate(subcategory = as.character(subcategory)) |>
-            dplyr::left_join(df_new_expenses_classified |>
-                               dplyr::mutate(date = as.character(date)),
-                             by = c("date", "description", amount_var, "bank", "subcategory"))
-
-          # Load the category dictionary
-          category_dict <- readr::read_csv(as.character(input$dictionary_file$datapath))
-
-          # Load the latest master file
-          df_old_master_file <- readr::read_csv(as.character(input$master_file$datapath))
+          saved_df <- shiny::isolate(
+            rhandsontable::hot_to_r(
+              input$unverified_expenses_table)) |>
+            dplyr::mutate(
+              subcategory = as.character(subcategory)) |>
+            dplyr::left_join(
+              df_new_expenses_classified |>
+                dplyr::mutate(date = as.character(date)),
+              by = c("date", "description", amount_var, "bank", "subcategory")
+              )
 
           # Bind new expenses (with category & direction) to the previous version of the master
           new_master <- dplyr::bind_rows(
@@ -370,19 +369,23 @@ run_app <- function() {
 
     })
 
-    ### Analytics graphs                                                      ####
+    ## Analyse past expenses tab                                            ####
+    ### Add UI elements for user input                                      ####
 
-    # When a new file is selected for analytics, add variable filtering UIs
+    # Run code after user selects analytics master file
     shiny::observeEvent(input$analytics_master_file, {
 
-      # Wait for input to run the script
+      # Wait for analytics master file input to run the script
       shiny::req(input$analytics_master_file)
 
       # Location of the file
       path_analytics_master_file <- as.character(input$analytics_master_file$datapath)
 
+      # Import file
+      df_analytics_master_file <- readr::read_csv(path_analytics_master_file)
+
       # Dates to select from
-      min_max_dates <- readr::read_csv(path_analytics_master_file) |>
+      min_max_dates <- df_analytics_master_file |>
         dplyr::summarise(
           min_date = min(date),
           max_date = max(date)
@@ -390,7 +393,7 @@ run_app <- function() {
       min_date <- min_max_dates$min_date
       max_date <- min_max_dates$max_date
 
-      # Add date selection - based on the data selected
+      # Add date selection - based on the data
       output$analytics_date_range <- shiny::renderUI({
         shiny::dateRangeInput("analytics_date_range",
                               "What range of dates do you want to visualize?",
@@ -399,7 +402,7 @@ run_app <- function() {
       })
 
       # Categories to select from
-      categories <- readr::read_csv(path_analytics_master_file) |>
+      categories <- df_analytics_master_file |>
         dplyr::distinct(category) |>
         dplyr::pull(category)
 
@@ -414,7 +417,7 @@ run_app <- function() {
       })
 
       # Subcategories to select from
-      subcategories <- readr::read_csv(path_analytics_master_file) |>
+      subcategories <- df_analytics_master_file |>
         dplyr::distinct(subcategory) |>
         dplyr::pull(subcategory)
 
@@ -429,39 +432,42 @@ run_app <- function() {
       })
     })
 
-    # Plot graphs
+    ### Plot waterfall graph                                                ####
     observe({
 
-      # Wait for input to run the script
+      # Wait for user inputs to run the script
       shiny::req(input$analytics_master_file)
       shiny::req(input$analytics_date_range)
 
+      #### Filter data based on user input                                  ####
       # Location of the file
       path_analytics_master_file <- as.character(input$analytics_master_file$datapath)
 
       # Load master file
-      analytics_master_file <- shiny::reactive(readr::read_csv(path_analytics_master_file))
+      df_analytics_master_file_reactive <- shiny::reactive(readr::read_csv(path_analytics_master_file))
 
-      # Filter master file
-      analytics_master_file <- analytics_master_file() |>
+      # Filter master file to desired date range
+      df_analytics_master_file_reactive <- df_analytics_master_file_reactive() |>
         # Filter to the desired date range
         dplyr::filter(date >= input$analytics_date_range[1]) |>
         dplyr::filter(date <= input$analytics_date_range[2])
 
       # Filter master file to desired categories and subcategories
-      analytics_master_file <- analytics_master_file |>
+      df_analytics_master_file_reactive <- df_analytics_master_file_reactive |>
         dplyr::filter(category %in% input$analytics_selected_categories) |>
         dplyr::filter(subcategory %in% input$analytics_selected_subcategories)
 
-      #### Process master file for a waterfall graph                            ####
+      ### Manipulate data in preparation for plot                           ####
 
       # Find number of distinct months
-      n_distinct_months <- analytics_master_file |>
-        dplyr::summarise(n_distinct_months = dplyr::n_distinct(lubridate::month(date))) |>
+      n_distinct_months <- df_analytics_master_file_reactive |>
+        dplyr::mutate(month = lubridate::month(date),
+                      year = lubridate::year(date)) |>
+        dplyr::summarise(n_distinct_months = dplyr::n_distinct(month, year)) |>
         pull(n_distinct_months)
 
       # Find the order of variables for the master file
-      df_variable_order <- analytics_master_file |>
+      df_variable_order <- df_analytics_master_file_reactive |>
         dplyr::mutate(month = lubridate::month(date)) |>
         dplyr::rename(amount_currency = stringr::str_c(
           "amount", input$master_currency_analytics, sep = "_")) |>
@@ -479,11 +485,11 @@ run_app <- function() {
       l_variable_order <- df_variable_order_in$category |>
         append(df_variable_order_out$category)
 
-      # Plot graph
+      # Finalise dataframe
       df_waterfall <- df_variable_order |>
         dplyr::mutate(category = factor(category,
-                                        l_variable_order
-        )) |>
+                                        l_variable_order)
+                      ) |>
         dplyr::mutate(measure = "relative") |>
         dplyr::mutate(text = dplyr::case_when(
           amount > 0 ~ stringr::str_c('+', as.character(amount), sep = ''),
@@ -500,7 +506,7 @@ run_app <- function() {
           )
         )
 
-      # Create plot
+      ### Create & show plot                                                ####
       fig_waterfall <- plotly::plot_ly(
         df_waterfall, name = "20", type = "waterfall", measure = ~ measure,
         x = ~category, textposition = "outside", y= ~amount, text =~text,
@@ -513,14 +519,12 @@ run_app <- function() {
                        autosize = TRUE,
                        showlegend = TRUE)
 
-      # Show table
+      # Show plot
       output$waterfall_plot <- plotly::renderPlotly({
         fig_waterfall
       })
     })
 
   }
-
   shiny::shinyApp(ui, server)
-
 }
