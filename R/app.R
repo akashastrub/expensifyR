@@ -459,65 +459,13 @@ run_app <- function() {
 
       ### Manipulate data in preparation for plot                           ####
 
-      # Find number of distinct months
-      n_distinct_months <- df_analytics_master_file_reactive |>
-        dplyr::mutate(month = lubridate::month(date),
-                      year = lubridate::year(date)) |>
-        dplyr::summarise(n_distinct_months = dplyr::n_distinct(month, year)) |>
-        pull(n_distinct_months)
-
-      # Find the order of variables for the master file
-      df_variable_order <- df_analytics_master_file_reactive |>
-        dplyr::mutate(month = lubridate::month(date)) |>
-        dplyr::rename(amount_currency = stringr::str_c(
-          "amount", input$master_currency_analytics, sep = "_")) |>
-        dplyr::mutate(category = stringr::str_replace(category, ' ', '_')) |>
-        dplyr::group_by(category) |>
-        dplyr::summarise(amount = round(sum(amount_currency)/n_distinct_months, 1)) |>
-        dplyr::ungroup() |>
-        dplyr::arrange(dplyr::desc(amount))
-
-      df_variable_order_in <- df_variable_order |> dplyr::filter(amount > 0)
-
-      df_variable_order_out <- df_variable_order |> dplyr::filter(amount <= 0) |>
-        dplyr::arrange(amount)
-
-      l_variable_order <- df_variable_order_in$category |>
-        append(df_variable_order_out$category)
-
-      # Finalise dataframe
-      df_waterfall <- df_variable_order |>
-        dplyr::mutate(category = factor(category,
-                                        l_variable_order)
-                      ) |>
-        dplyr::mutate(measure = "relative") |>
-        dplyr::mutate(text = dplyr::case_when(
-          amount > 0 ~ stringr::str_c('+', as.character(amount), sep = ''),
-          TRUE ~ as.character(amount))
-        ) |>
-        rbind(data.frame(category = "Monthly profit after tax",
-                                amount = 0,
-                                measure = "total",
-                                text = "Total")) |>
-        dplyr::arrange(
-          factor(
-            category,
-            levels = (l_variable_order |> append("Monthly profit after tax"))
-          )
-        )
+      # Create dataframe for waterfall plot
+      df_waterfall <- expensifyR::transform_master_for_waterfall(
+        df = df_analytics_master_file_reactive,
+        master_currency_analytics = stringr::str_c("amount", input$master_currency_analytics, sep = "_"))
 
       ### Create & show plot                                                ####
-      fig_waterfall <- plotly::plot_ly(
-        df_waterfall, name = "20", type = "waterfall", measure = ~ measure,
-        x = ~category, textposition = "outside", y= ~amount, text =~text,
-        connector = list(line = list(color= "rgb(63, 63, 63)")))
-
-      fig_waterfall <- fig_waterfall |>
-        plotly::layout(title = "Profit and loss statement",
-                       xaxis = list(title = ""),
-                       yaxis = list(title = ""),
-                       autosize = TRUE,
-                       showlegend = TRUE)
+      fig_waterfall <- expensifyR::plot_waterfall(df = df_waterfall)
 
       # Show plot
       output$waterfall_plot <- plotly::renderPlotly({
