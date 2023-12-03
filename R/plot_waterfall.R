@@ -78,6 +78,6 @@ plot_waterfall <- function(df) {
                    autosize = TRUE,
                    showlegend = TRUE)
 
-  # Return dataframe
+  # Return figure
   return(fig_waterfall)
 }
