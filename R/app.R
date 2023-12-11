@@ -15,7 +15,10 @@ run_app <- function() {
       shinydashboard::sidebarMenu(
         shinydashboard::menuItem("Home Page", tabName = "home", icon = shiny::icon("house")),
         shinydashboard::menuItem("Add new expenses", tabName = "add_new_expenses", icon = shiny::icon("plus")),
-        shinydashboard::menuItem("Analyse past expenses", tabName = "analyse_past_expenses", icon = shiny::icon("chart-line"))
+        shinydashboard::menuItem("Analyse expenses", tabName = "analyse_expenses", icon = shiny::icon("chart-line")),
+        shinydashboard::menuItem("Update balances", tabName = "update_balances", icon = shiny::icon("plus")),
+        shinydashboard::menuItem("Analyse balances", tabName = "analyse_balances", icon = shiny::icon("chart-line"))
+
       )
     ),
     ## Body                                                                 ####
@@ -153,14 +156,14 @@ run_app <- function() {
         ),
 
         ### Analysis of past expenses tab                                   ####
-        shinydashboard::tabItem(tabName = "analyse_past_expenses",
-                                shiny::h2("Analyse past expenses"),
+        shinydashboard::tabItem(tabName = "analyse_expenses",
+                                shiny::h2("Analyse expenses"),
                                 shiny::fluidRow(
 
                                   # Analytics text
                                   shinydashboard::box(
 
-                                    shiny::HTML("This is the 'Analyse past expenses' tab. <br/>
+                                    shiny::HTML("This is the 'Analyse expenses' tab. <br/>
                 <br/>
 
                 The purpose of this tab is to allow you to select a specific
@@ -204,6 +207,97 @@ run_app <- function() {
 
                   # Waterfall plotly
                   plotly::plotlyOutput("waterfall_plot")
+                )
+                                )
+        ),
+
+        ### Update balances tab                                             ####
+        shinydashboard::tabItem(
+          tabName = "update_balances",
+          shiny::h2("Update balances"),
+          shiny::fluidRow(
+
+          # Update balances info
+          shinydashboard::box(
+            shiny::HTML(
+              "This is the 'Update balances' tab. <br/>
+              <br/>
+
+              The purpose of this tab is to allow you to load and edit
+              your balances.<br/>
+              <br/>"),
+
+            # Left hand side
+            width = 3,
+
+            # User inputs balances file
+            shiny::fileInput("balances_file",
+                             'Select the balances file you wish to edit')
+            ),
+
+            shinydashboard::box(
+              # Right hand side
+              width = 9,
+
+              # Modifiable box
+              rhandsontable::rHandsontableOutput("balances_table"),
+
+              # Action button to save modifications
+              shiny::downloadButton(
+                "download_new_balances_file",
+                "Save my edits and download new balances file!",
+                style = "color: #fff; background-color: #337ab7; border-color: #2e6da4")
+                      )
+            )
+          ),
+
+        ### Analysis of balances tab                                        ####
+        shinydashboard::tabItem(tabName = "analyse_balances",
+                                shiny::h2("Analyse balances"),
+                                shiny::fluidRow(
+
+                                  # Analytics text
+                                  shinydashboard::box(
+
+                                    shiny::HTML("This is the 'Analyse balances' tab. <br/>
+                <br/>
+
+                Here is some text describing it. <br/>
+                <br/>"),
+
+                # Left hand side
+                width = 3,
+
+                # User inputs
+                # Input 5 - master file
+                shiny::fileInput("analytics_balances_file",
+                                 'Select the balances file you wish to analyse'),
+
+                # Input 6 - currency of choice
+                shiny::selectInput("master_currency_analytics",
+                                   "What is the currency of this file?",
+
+
+                                   c("EUROs" = "eur",
+                                     "US Dollars" = "usd",
+                                     "GB Pounds" = "gbp",
+                                     "Swiss Francs" = "chf")
+                ),
+
+                # Input 7 - time period desired
+                shiny::uiOutput("analytics_balances_date_range"),
+
+                # Input 8 - categories
+                shiny::uiOutput("analytics_balances_accounts")
+                                  ),
+
+                # Modifiable table
+                shinydashboard::box(
+                  # Right hand side only
+                  width = 9,
+
+                  # Waterfall plotly
+                  plotly::plotlyOutput("balances_plot")
                 )
                                 )
         )
@@ -369,7 +463,7 @@ run_app <- function() {
 
     })
 
-    ## Analyse past expenses tab                                            ####
+    ## Analyse expenses tab                                            ####
     ### Add UI elements for user input                                      ####
 
     # Run code after user selects analytics master file
@@ -472,6 +566,129 @@ run_app <- function() {
         fig_waterfall
       })
     })
+
+    ## Update balances tab                                                  ####
+    # When user uploads balances_file, load it in
+    shiny::observeEvent(input$balances_file, {
+
+      # Load the balances file dictionary
+      df_balances_file <- readr::read_csv(
+        as.character(input$balances_file$datapath)) |>
+        mutate(date = as.character(date))
+
+      # Show the user the balances file on a table
+      output$balances_table <- rhandsontable::renderRHandsontable({
+        rhandsontable::rhandsontable(
+          df_balances_file,
+          height = 500) |>
+          rhandsontable::hot_cols(colWidths = c(100, 150, 100)) |>
+          rhandsontable::hot_table(highlightCol = TRUE, highlightRow = TRUE)
+      })
+
+      ### Download new balances file upon user click                        ####
+
+      # Save edits button
+      output$download_new_balances_file <- shiny::downloadHandler(
+        filename = function() {
+          stringr::str_c('balances_',
+                         format(Sys.Date(), "%Y%m%d"),
+                         '.csv',
+                         sep = '')
+        },
+        content = function(file) {
+
+          # Convert hands-on-table to R dataframe
+          df_saved_balances <- shiny::isolate(
+            rhandsontable::hot_to_r(input$balances_table)) |>
+            dplyr::mutate(date = as.character(date))
+
+          # Save the file
+          readr::write_csv(df_saved_balances, file)
+        }
+      )
+
+    })
+
+    ## Analyse balances tab                                                 ####
+
+    # Run code after user selects analytics balances file
+    shiny::observeEvent(input$analytics_balances_file, {
+
+      # Wait for analytics balances file input to run the script
+      shiny::req(input$analytics_balances_file)
+
+      # Import balances file
+      df_analytics_balances_file <- readr::read_csv(
+        as.character(input$analytics_balances_file$datapath))
+
+      # Dates to select from
+      analytics_balances_min_max_dates <- df_analytics_balances_file |>
+        dplyr::summarise(
+          min_date = min(date),
+          max_date = max(date)
+        )
+      analytics_balances_min_date <- analytics_balances_min_max_dates$min_date
+      analytics_balances_max_date <- analytics_balances_min_max_dates$max_date
+
+      ### Add UI elements for user input                                      ####
+      # Add date selection - based on the data
+      output$analytics_balances_date_range <- shiny::renderUI({
+        shiny::dateRangeInput("analytics_balances_selected_date_range",
+                              "What range of dates do you want to visualize?",
+                              start = analytics_balances_min_date,
+                              end   = analytics_balances_max_date)
+      })
+
+      # Categories to select from
+      analytics_balances_accounts <- df_analytics_balances_file |>
+        dplyr::distinct(account) |>
+        dplyr::pull(account)
+
+      # Add category selection - based on the data
+      output$analytics_balances_accounts <- shiny::renderUI({
+        shiny::selectInput(inputId ="analytics_balances_selected_accounts",
+                           label = "Choose which accounts to include",
+                           choices = analytics_balances_accounts,
+                           multiple = TRUE,
+                           selected = analytics_balances_accounts
+        )
+      })
+    })
+
+    ### Plot net worth tracker graph                                        ####
+    observe({
+
+      # Wait for user inputs to run the script
+      shiny::req(input$analytics_balances_file)
+      shiny::req(input$analytics_balances_selected_accounts)
+
+      #### Filter data based on user input                                  ####
+      # Location of the file
+      path_analytics_balances_file <- as.character(input$analytics_balances_file$datapath)
+
+      # Load balances file
+      df_analytics_balances_file_reactive <- shiny::reactive(
+        readr::read_csv(path_analytics_balances_file))
+
+      # Filter balances file to desired date range
+      df_analytics_balances_file_reactive <- df_analytics_balances_file_reactive() |>
+        # Filter to the desired date range
+        dplyr::filter(date >= input$analytics_balances_selected_date_range[1]) |>
+        dplyr::filter(date <= input$analytics_balances_selected_date_range[2])
+
+      # Filter balances file to desired categories and subcategories
+      df_analytics_balances_file_reactive <- df_analytics_balances_file_reactive |>
+        dplyr::filter(account %in% input$analytics_balances_selected_accounts)
+
+      ### Create & show plot                                                ####
+      fig_balances <- expensifyR::plot_balances(df = df_analytics_balances_file_reactive)
+
+      # Show plot
+      output$balances_plot <- plotly::renderPlotly({
+        fig_balances
+      })
+    })
+
 
   }
   shiny::shinyApp(ui, server)
