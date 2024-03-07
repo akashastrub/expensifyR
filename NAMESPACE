@@ -2,7 +2,8 @@
 
 export(classify_subcategories)
 export(convert_amount)
-export(import_boa)
+export(import_boa_credit)
+export(import_boa_debit)
 export(import_danske)
 export(import_natwest)
 export(import_revolut)

@@ -337,7 +337,12 @@ run_app <- function() {
         # Extract relevant information from filename
         y <- stringr::str_split(filename, "_")[[1]]
         bank <- y[1]
-        currency <- tolower(y[2])
+        if (bank == "boa") {
+          bank <- stringr::str_c(y[1], "_", y[2])
+          currency <- tolower(y[3])
+        } else {
+          currency <- tolower(y[2])
+        }
 
         # Create expression to run bank and currency specific function
         expr <- stringr::str_c(stringr::str_c("expensifyR::import", bank, sep = "_"),
