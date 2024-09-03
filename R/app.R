@@ -92,16 +92,26 @@ run_app <- function() {
                       # Input 2 - dictionary file
                       shiny::fileInput("dictionary_file", 'Select your dictionary file'),
 
-                      # Input 3 - raw bank data
-                      shiny::fileInput("temp_bank_data_files",
-                                       'Select your new bank data files',
+                      # Input 3 - personal raw bank data
+                      shiny::fileInput("temp_personal_bank_data_files",
+                                       'Select your new personal bank data files',
                                        multiple = TRUE),
 
-                      # Input 4 - currency of choice
+                      # Input 4 - shared raw bank data
+                      shiny::fileInput("temp_shared_bank_data_files",
+                                       'Select your new shared bank data files',
+                                       multiple = TRUE),
+
+                      # Input 5 - shared raw bank data multiplier
+                      shiny::numericInput("shared_perc",
+                                          'Select the percentage of shared expenses you paid for',
+                                          value = 60, min = 1, max = 99, step = 1),
+
+                      # Input 6 - currency of choice
                       shiny::selectInput("master_currency_new_expenses",
                                          "What is your currency of choice?",
-                                         c("EUROs" = "eur",
-                                           "US Dollars" = "usd",
+                                         c("US Dollars" = "usd",
+                                           "EUROs" = "eur",
                                            "GB Pounds" = "gbp",
                                            "Swiss Francs" = "chf")
                       ),
@@ -184,8 +194,8 @@ run_app <- function() {
                                    "What is your currency of choice?",
 
 
-                                   c("EUROs" = "eur",
-                                     "US Dollars" = "usd",
+                                   c("US Dollars" = "usd",
+                                     "EUROs" = "eur",
                                      "GB Pounds" = "gbp",
                                      "Swiss Francs" = "chf")
                 ),
@@ -278,8 +288,8 @@ run_app <- function() {
                                    "What is the currency of this file?",
 
 
-                                   c("EUROs" = "eur",
-                                     "US Dollars" = "usd",
+                                   c("US Dollars" = "usd",
+                                     "EUROs" = "eur",
                                      "GB Pounds" = "gbp",
                                      "Swiss Francs" = "chf")
                 ),
@@ -317,27 +327,33 @@ run_app <- function() {
     # When user clicks add_new_expenses_button, merge new expenses.
     shiny::observeEvent(input$add_new_expenses_button, {
 
-      # Location of temp files with new expenses
-      path_raw_bank_data_files <- as.character(input$temp_bank_data_files$datapath)
+      #### Personal new bank files                                          ####
+      # Location of temp files with new personal expenses
+      path_raw_personal_bank_data_files <- as.character(input$temp_personal_bank_data_files$datapath)
 
       # Create empty dataframe to populate iteratively
-      df_temp <- data.frame()
+      df_temp_personal <- data.frame()
 
-      # Bind all data together with the same format
+      # Bind all personal data together with the same format
       # Loop over all filenames individually
-      for (i in seq(1:length(path_raw_bank_data_files))) {
+      for (i in seq(1:length(path_raw_personal_bank_data_files))) {
 
         # Extract filename, to be used for relevant information
-        filename <- input$temp_bank_data_files$name[i]
+        filename <- input$temp_personal_bank_data_files$name[i]
 
         # Extract filepath, to be used for import
-        filepath <- stringr::str_replace_all(input$temp_bank_data_files$datapath[i],
+        filepath <- stringr::str_replace_all(input$temp_personal_bank_data_files$datapath[i],
                                              "\\\\", "/")
 
         # Extract relevant information from filename
         y <- stringr::str_split(filename, "_")[[1]]
         bank <- y[1]
-        currency <- tolower(y[2])
+        if (bank == "boa") {
+          bank <- stringr::str_c(y[1], "_", y[2])
+          currency <- tolower(y[3])
+        } else {
+          currency <- tolower(y[2])
+        }
 
         # Create expression to run bank and currency specific function
         expr <- stringr::str_c(stringr::str_c("expensifyR::import", bank, sep = "_"),
@@ -348,21 +364,84 @@ run_app <- function() {
                                "')")
 
         # Run function
-        df_temp_addon <- eval(parse(text = expr))
+        df_temp_personal_addon <- eval(parse(text = expr))
 
         # Convert amounts, if rows present and currencies not aligned
-        if (nrow(df_temp_addon) > 0) {
+        if (nrow(df_temp_personal_addon) > 0) {
           if (currency != input$master_currency_new_expenses) {
-            df_temp_addon <- expensifyR::convert_amount(
-              df = df_temp_addon,
+            df_temp_personal_addon <- expensifyR::convert_amount(
+              df = df_temp_personal_addon,
               currency_in = currency,
               currency_out = input$master_currency_new_expenses)
           }
 
           # Bind bank-currency specific data to other new data
-          df_temp <- dplyr::bind_rows(df_temp, df_temp_addon)
+          df_temp_personal <- dplyr::bind_rows(df_temp_personal, df_temp_personal_addon)
+        }
+
+        #### Shared new bank files                                          ####
+        # Location of temp files with new personal expenses
+        path_raw_shared_bank_data_files <- as.character(input$temp_shared_bank_data_files$datapath)
+
+        # Create empty dataframe to populate iteratively
+        df_temp_shared <- data.frame()
+
+        # Bind all personal data together with the same format
+        # Loop over all filenames individually
+        for (i in seq(1:length(path_raw_shared_bank_data_files))) {
+
+          # Extract filename, to be used for relevant information
+          filename <- input$temp_shared_bank_data_files$name[i]
+
+          # Extract filepath, to be used for import
+          filepath <- stringr::str_replace_all(input$temp_shared_bank_data_files$datapath[i],
+                                               "\\\\", "/")
+
+          # Extract relevant information from filename
+          y <- stringr::str_split(filename, "_")[[1]]
+          bank <- y[1]
+          if (bank == "boa") {
+            bank <- stringr::str_c(y[1], "_", y[2])
+            currency <- tolower(y[3])
+          } else {
+            currency <- tolower(y[2])
+          }
+
+          # Create expression to run bank and currency specific function
+          expr <- stringr::str_c(stringr::str_c("expensifyR::import", bank, sep = "_"),
+                                 "('",
+                                 filepath,
+                                 "', '",
+                                 currency,
+                                 "')")
+
+          # Run function
+          df_temp_shared_addon <- eval(parse(text = expr))
+
+          # Convert amounts, if rows present and currencies not aligned
+          if (nrow(df_temp_shared_addon) > 0) {
+            if (currency != input$master_currency_new_expenses) {
+              df_temp_shared_addon <- expensifyR::convert_amount(
+                df = df_temp_shared_addon,
+                currency_in = currency,
+                currency_out = input$master_currency_new_expenses)
+            }
+
+            # Bind bank-currency specific data to other new data
+            df_temp_shared <- dplyr::bind_rows(df_temp_shared, df_temp_shared_addon)
+          }
+          browser()
+
+          # Multiply by user-inputted percentage
+          df_temp_shared <- df_temp_shared |>
+            dplyr::mutate(dplyr::across(dplyr::starts_with('amount'),
+                                        ~ dplyr::case_when(is.na(.) ~ NA,
+                                                           TRUE ~ . * 0.6)))
         }
       }
+
+      # Join dataframes
+      df_temp <- dplyr::bind_rows(df_temp_personal, df_temp_shared)
 
       # Arrange by date
       df_temp <- dplyr::arrange(df_temp, date)
