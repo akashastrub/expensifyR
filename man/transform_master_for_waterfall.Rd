@@ -4,7 +4,7 @@
 \alias{transform_master_for_waterfall}
 \title{Manipulate master file data in preparation for waterfall plot}
 \usage{
-transform_master_for_waterfall(df, master_currency_analytics)
+transform_master_for_waterfall(df, master_currency_analytics, group)
 }
 \arguments{
 \item{df}{Dataframe containing master file data}
