@@ -105,7 +105,7 @@ run_app <- function() {
                       # Input 5 - shared raw bank data multiplier
                       shiny::numericInput("shared_perc",
                                           'Select the percentage of shared expenses you paid for',
-                                          value = 60, min = 1, max = 99, step = 1),
+                                          value = 60, min = 0, max = 100, step = 1),
 
                       # Input 6 - currency of choice
                       shiny::selectInput("master_currency_new_expenses",
@@ -203,10 +203,17 @@ run_app <- function() {
                 # Input 7 - time period desired
                 shiny::uiOutput("analytics_date_range"),
 
-                # Input 8 - categories
+                # Input 8 - group
+                shiny::selectInput("waterfall_group",
+                                   "What grouping would you like to visualize?",
+
+                                   c("Subcategories" = "subcategory",
+                                     "Categories" = 'category')),
+
+                # Input 9 - categories
                 shiny::uiOutput("analytics_categories"),
 
-                # Input 9 - subcategories
+                # Input 10 - subcategories
                 shiny::uiOutput("analytics_subcategories")
                                   ),
 
@@ -319,6 +326,7 @@ run_app <- function() {
   # Server                                                                  ####
   server <- function(input, output, session) {
 
+
     # Control notification
     df_new_expenses_classified <- NULL
 
@@ -328,58 +336,65 @@ run_app <- function() {
     shiny::observeEvent(input$add_new_expenses_button, {
 
       #### Personal new bank files                                          ####
-      # Location of temp files with new personal expenses
-      path_raw_personal_bank_data_files <- as.character(input$temp_personal_bank_data_files$datapath)
+      if (!is.null(input$temp_personal_bank_data_files$datapath)) {
 
-      # Create empty dataframe to populate iteratively
-      df_temp_personal <- data.frame()
+        # Location of temp files with new personal expenses
+        path_raw_personal_bank_data_files <- as.character(input$temp_personal_bank_data_files$datapath)
 
-      # Bind all personal data together with the same format
-      # Loop over all filenames individually
-      for (i in seq(1:length(path_raw_personal_bank_data_files))) {
+        # Create empty dataframe to populate iteratively
+        df_temp_personal <- data.frame()
 
-        # Extract filename, to be used for relevant information
-        filename <- input$temp_personal_bank_data_files$name[i]
+        # Bind all personal data together with the same format
+        # Loop over all filenames individually
+        for (i in seq(1:length(path_raw_personal_bank_data_files))) {
 
-        # Extract filepath, to be used for import
-        filepath <- stringr::str_replace_all(input$temp_personal_bank_data_files$datapath[i],
-                                             "\\\\", "/")
+          # Extract filename, to be used for relevant information
+          filename <- input$temp_personal_bank_data_files$name[i]
 
-        # Extract relevant information from filename
-        y <- stringr::str_split(filename, "_")[[1]]
-        bank <- y[1]
-        if (bank == "boa") {
-          bank <- stringr::str_c(y[1], "_", y[2])
-          currency <- tolower(y[3])
-        } else {
-          currency <- tolower(y[2])
-        }
+          # Extract filepath, to be used for import
+          filepath <- stringr::str_replace_all(input$temp_personal_bank_data_files$datapath[i],
+                                               "\\\\", "/")
 
-        # Create expression to run bank and currency specific function
-        expr <- stringr::str_c(stringr::str_c("expensifyR::import", bank, sep = "_"),
-                               "('",
-                               filepath,
-                               "', '",
-                               currency,
-                               "')")
-
-        # Run function
-        df_temp_personal_addon <- eval(parse(text = expr))
-
-        # Convert amounts, if rows present and currencies not aligned
-        if (nrow(df_temp_personal_addon) > 0) {
-          if (currency != input$master_currency_new_expenses) {
-            df_temp_personal_addon <- expensifyR::convert_amount(
-              df = df_temp_personal_addon,
-              currency_in = currency,
-              currency_out = input$master_currency_new_expenses)
+          # Extract relevant information from filename
+          y <- stringr::str_split(filename, "_")[[1]]
+          bank <- y[1]
+          if (bank == "boa") {
+            bank <- stringr::str_c(y[1], "_", y[2])
+            currency <- tolower(y[3])
+          } else {
+            currency <- tolower(y[2])
           }
 
-          # Bind bank-currency specific data to other new data
-          df_temp_personal <- dplyr::bind_rows(df_temp_personal, df_temp_personal_addon)
-        }
+          # Create expression to run bank and currency specific function
+          expr <- stringr::str_c(stringr::str_c("expensifyR::import", bank, sep = "_"),
+                                 "('",
+                                 filepath,
+                                 "', '",
+                                 currency,
+                                 "')")
 
-        #### Shared new bank files                                          ####
+          # Run function
+          df_temp_personal_addon <- eval(parse(text = expr))
+
+          # Convert amounts, if rows present and currencies not aligned
+          if (nrow(df_temp_personal_addon) > 0) {
+            if (currency != input$master_currency_new_expenses) {
+              df_temp_personal_addon <- expensifyR::convert_amount(
+                df = df_temp_personal_addon,
+                currency_in = currency,
+                currency_out = input$master_currency_new_expenses)
+            }
+
+            # Bind bank-currency specific data to other new data
+            df_temp_personal <- dplyr::bind_rows(df_temp_personal, df_temp_personal_addon)
+          }
+        }
+      }
+
+        ### Shared new bank files                                           ####
+
+      if (!is.null(input$temp_shared_bank_data_files$datapath)) {
+
         # Location of temp files with new personal expenses
         path_raw_shared_bank_data_files <- as.character(input$temp_shared_bank_data_files$datapath)
 
@@ -430,18 +445,23 @@ run_app <- function() {
             # Bind bank-currency specific data to other new data
             df_temp_shared <- dplyr::bind_rows(df_temp_shared, df_temp_shared_addon)
           }
-          browser()
 
           # Multiply by user-inputted percentage
           df_temp_shared <- df_temp_shared |>
             dplyr::mutate(dplyr::across(dplyr::starts_with('amount'),
                                         ~ dplyr::case_when(is.na(.) ~ NA,
-                                                           TRUE ~ . * 0.6)))
+                                                           TRUE ~ . * (0.01 * input$shared_perc)))) #TODO
         }
       }
 
-      # Join dataframes
-      df_temp <- dplyr::bind_rows(df_temp_personal, df_temp_shared)
+      # Join dataframes, if both present
+      if (!exists('df_temp_personal')) {
+        df_temp <- df_temp_shared
+      } else if (!exists('df_temp_shared')) {
+        df_temp <- df_temp_personal
+      } else {
+        df_temp <- dplyr::bind_rows(df_temp_personal, df_temp_shared)
+      }
 
       # Arrange by date
       df_temp <- dplyr::arrange(df_temp, date)
@@ -635,10 +655,12 @@ run_app <- function() {
       # Create dataframe for waterfall plot
       df_waterfall <- expensifyR::transform_master_for_waterfall(
         df = df_analytics_master_file_reactive,
-        master_currency_analytics = stringr::str_c("amount", input$master_currency_analytics, sep = "_"))
+        master_currency_analytics = stringr::str_c("amount", input$master_currency_analytics, sep = "_"),
+        group = input$waterfall_group)
 
       ### Create & show plot                                                ####
-      fig_waterfall <- expensifyR::plot_waterfall(df = df_waterfall)
+      fig_waterfall <- expensifyR::plot_waterfall(df = df_waterfall,
+                                                  group = input$waterfall_group)
 
       # Show plot
       output$waterfall_plot <- plotly::renderPlotly({

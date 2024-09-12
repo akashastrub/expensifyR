@@ -4,7 +4,7 @@
 \alias{plot_waterfall}
 \title{Create waterfall plot}
 \usage{
-plot_waterfall(df)
+plot_waterfall(df, group)
 }
 \arguments{
 \item{df}{Dataframe containing processed master file data}
