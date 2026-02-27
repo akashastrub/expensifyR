@@ -7,17 +7,16 @@
 #' @import dplyr plotly
 #' @export
 #'
-plot_balances <- function(df) {
+plot_balances <- function(df, currency = "usd") {
 
   # Aggregate data for balances plot
   df_plot <- df |>
     group_by(date) |>
-    summarise(total = sum(amount_usd))
+    summarise(total = sum(.data[[stringr::str_c("amount_", currency)]], na.rm = TRUE))
 
   # Create balances plot
   fig_balances <- plot_ly(df_plot, type = 'scatter', mode = 'lines+markers') |>
-    add_trace(x = ~date, y = ~total, name = 'net worth') #|> layout(showlegend = F)
-  options(warn = -1)
+    add_trace(x = ~date, y = ~total, name = 'net worth')
 
   # Add minor stylistic preferences
   fig_balances <- fig_balances %>%

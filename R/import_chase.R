@@ -1,22 +1,22 @@
-#' Process Bank of America credit card file. User must manually modify
+#' Process Chase credit card file. User must manually modify
 #' statements to ensure correct date ranges
 #'
-#' @param path Path of raw Bank of America credit card file
-#' @param currency Currency of Bank of America file (USD)
+#' @param path Path of raw Chase credit card file
+#' @param currency Currency of Chase file (USD)
 #'
 #' @return Same data in common data format.
 #' @import readr dplyr lubridate
 #' @export
 #'
-import_boa_credit <- function(path, currency = "usd") {
+import_chase <- function(path, currency = "usd") {
   # Convert file to UTF-8 file format
   expensifyR::to_utf8(path)
 
   df <- readr::read_csv(path)  |>
     dplyr::rename(
       c(
-        "date" = "Posted Date",
-        "description" = "Payee",
+        "date" = "Transaction Date",
+        "description" = "Description",
         "amount_usd" = "Amount"
       )
     ) |>
@@ -24,7 +24,7 @@ import_boa_credit <- function(path, currency = "usd") {
     dplyr::filter(!is.na(amount_usd)) |>
     dplyr::mutate(
       date = lubridate::mdy(date),
-      bank = "BoA Credit",
+      bank = "Chase Credit",
       amount_chf = NA,
       amount_eur = NA,
       amount_dkk = NA,
