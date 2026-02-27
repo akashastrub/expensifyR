@@ -56,9 +56,7 @@ classify_subcategories <-
     # Training/latest master data pre-processing ####
     # Load in master data and process
     df_train <- df_old_master_file %>%
-      dplyr::select(date,
-                    description,
-                    amount_eur,
+      dplyr::select(description,
                     subcategory)
 
     # Filter to only include subcategories with more than 2 observations
@@ -86,9 +84,6 @@ classify_subcategories <-
       dplyr::select(-description)
 
     df_sh_pred <- df_new_expenses %>%
-      dplyr::select(date,
-                    description,
-                    amount_eur) %>%
       dplyr::mutate(subcategory = "") %>%
       dplyr::mutate(description = dplyr::if_else(is.na(description), " ", description)) %>%
       dplyr::select(description, subcategory)

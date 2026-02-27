@@ -291,7 +291,7 @@ run_app <- function() {
                                  'Select the balances file you wish to analyse'),
 
                 # Input 6 - currency of choice
-                shiny::selectInput("master_currency_analytics",
+                shiny::selectInput("balances_currency",
                                    "What is the currency of this file?",
 
 
@@ -326,7 +326,6 @@ run_app <- function() {
   # Server                                                                  ####
   server <- function(input, output, session) {
 
-
     # Control notification
     df_new_expenses_classified <- NULL
 
@@ -335,123 +334,31 @@ run_app <- function() {
     # When user clicks add_new_expenses_button, merge new expenses.
     shiny::observeEvent(input$add_new_expenses_button, {
 
+      shiny::validate(
+        shiny::need(input$master_file, "Please upload a master file"),
+        shiny::need(input$dictionary_file, "Please upload a dictionary file")
+      )
+
       #### Personal new bank files                                          ####
-      if (!is.null(input$temp_personal_bank_data_files$datapath)) {
-
-        # Location of temp files with new personal expenses
-        path_raw_personal_bank_data_files <- as.character(input$temp_personal_bank_data_files$datapath)
-
-        # Create empty dataframe to populate iteratively
-        df_temp_personal <- data.frame()
-
-        # Bind all personal data together with the same format
-        # Loop over all filenames individually
-        for (i in seq(1:length(path_raw_personal_bank_data_files))) {
-
-          # Extract filename, to be used for relevant information
-          filename <- input$temp_personal_bank_data_files$name[i]
-
-          # Extract filepath, to be used for import
-          filepath <- stringr::str_replace_all(input$temp_personal_bank_data_files$datapath[i],
-                                               "\\\\", "/")
-
-          # Extract relevant information from filename
-          y <- stringr::str_split(filename, "_")[[1]]
-          bank <- y[1]
-          if (bank == "boa") {
-            bank <- stringr::str_c(y[1], "_", y[2])
-            currency <- tolower(y[3])
-          } else {
-            currency <- tolower(y[2])
-          }
-
-          # Create expression to run bank and currency specific function
-          expr <- stringr::str_c(stringr::str_c("expensifyR::import", bank, sep = "_"),
-                                 "('",
-                                 filepath,
-                                 "', '",
-                                 currency,
-                                 "')")
-
-          # Run function
-          df_temp_personal_addon <- eval(parse(text = expr))
-
-          # Convert amounts, if rows present and currencies not aligned
-          if (nrow(df_temp_personal_addon) > 0) {
-            if (currency != input$master_currency_new_expenses) {
-              df_temp_personal_addon <- expensifyR::convert_amount(
-                df = df_temp_personal_addon,
-                currency_in = currency,
-                currency_out = input$master_currency_new_expenses)
-            }
-
-            # Bind bank-currency specific data to other new data
-            df_temp_personal <- dplyr::bind_rows(df_temp_personal, df_temp_personal_addon)
-          }
-        }
+      if (!is.null(input$temp_personal_bank_data_files)) {
+        df_temp_personal <- import_and_combine_bank_files(
+          input$temp_personal_bank_data_files,
+          input$master_currency_new_expenses
+        )
       }
 
-        ### Shared new bank files                                           ####
+      ### Shared new bank files                                             ####
+      if (!is.null(input$temp_shared_bank_data_files)) {
+        df_temp_shared <- import_and_combine_bank_files(
+          input$temp_shared_bank_data_files,
+          input$master_currency_new_expenses
+        )
 
-      if (!is.null(input$temp_shared_bank_data_files$datapath)) {
-
-        # Location of temp files with new personal expenses
-        path_raw_shared_bank_data_files <- as.character(input$temp_shared_bank_data_files$datapath)
-
-        # Create empty dataframe to populate iteratively
-        df_temp_shared <- data.frame()
-
-        # Bind all personal data together with the same format
-        # Loop over all filenames individually
-        for (i in seq(1:length(path_raw_shared_bank_data_files))) {
-
-          # Extract filename, to be used for relevant information
-          filename <- input$temp_shared_bank_data_files$name[i]
-
-          # Extract filepath, to be used for import
-          filepath <- stringr::str_replace_all(input$temp_shared_bank_data_files$datapath[i],
-                                               "\\\\", "/")
-
-          # Extract relevant information from filename
-          y <- stringr::str_split(filename, "_")[[1]]
-          bank <- y[1]
-          if (bank == "boa") {
-            bank <- stringr::str_c(y[1], "_", y[2])
-            currency <- tolower(y[3])
-          } else {
-            currency <- tolower(y[2])
-          }
-
-          # Create expression to run bank and currency specific function
-          expr <- stringr::str_c(stringr::str_c("expensifyR::import", bank, sep = "_"),
-                                 "('",
-                                 filepath,
-                                 "', '",
-                                 currency,
-                                 "')")
-
-          # Run function
-          df_temp_shared_addon <- eval(parse(text = expr))
-
-          # Convert amounts, if rows present and currencies not aligned
-          if (nrow(df_temp_shared_addon) > 0) {
-            if (currency != input$master_currency_new_expenses) {
-              df_temp_shared_addon <- expensifyR::convert_amount(
-                df = df_temp_shared_addon,
-                currency_in = currency,
-                currency_out = input$master_currency_new_expenses)
-            }
-
-            # Bind bank-currency specific data to other new data
-            df_temp_shared <- dplyr::bind_rows(df_temp_shared, df_temp_shared_addon)
-          }
-
-          # Multiply by user-inputted percentage
-          df_temp_shared <- df_temp_shared |>
-            dplyr::mutate(dplyr::across(dplyr::starts_with('amount'),
-                                        ~ dplyr::case_when(is.na(.) ~ NA,
-                                                           TRUE ~ . * (0.01 * input$shared_perc)))) #TODO
-        }
+        # Multiply by user-inputted percentage
+        df_temp_shared <- df_temp_shared |>
+          dplyr::mutate(dplyr::across(dplyr::starts_with('amount'),
+                                      ~ dplyr::case_when(is.na(.) ~ NA,
+                                                         TRUE ~ . * (0.01 * input$shared_perc)))) #TODO
       }
 
       # Join dataframes, if both present
@@ -479,8 +386,7 @@ run_app <- function() {
       df_new_expenses <- df_temp |>
         dplyr::anti_join(
           df_old_master_file,
-          by = c("date", "description", "amount_chf", "amount_dkk",
-                 "amount_eur", "amount_usd", "amount_gbp", "bank"))
+          by = c("date", "description", "bank"))
 
       ### Classify new expenses & output rhandsontable                      ####
       # Location of category classifier
@@ -782,7 +688,8 @@ run_app <- function() {
         dplyr::filter(account %in% input$analytics_balances_selected_accounts)
 
       ### Create & show plot                                                ####
-      fig_balances <- expensifyR::plot_balances(df = df_analytics_balances_file_reactive)
+      fig_balances <- expensifyR::plot_balances(df = df_analytics_balances_file_reactive,
+                                                currency = input$balances_currency)
 
       # Show plot
       output$balances_plot <- plotly::renderPlotly({

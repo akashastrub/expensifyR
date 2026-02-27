@@ -1,0 +1,2 @@
+Type,Product,Started Date,Completed Date,Description,Amount,Fee,Currency,State,Balance
+CARD_PAYMENT,Current,2022-07-25 10:00:00,2022-07-25 10:01:00,Starbucks Coffee,-5.50,0.00,EUR,COMPLETED,-5.50

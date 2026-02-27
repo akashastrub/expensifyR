@@ -14,10 +14,8 @@ import_danske <- function(path, currency = "dkk") {
   # Import data and rename
   df <- readr::read_csv(path) %>%
     dplyr::rename(c('date' = 'Dato',
-                    'description' = 'Tekst'))
-
-  # Rename indexing due to Danish text
-  colnames(df)[5] <- 'amount_dkk'
+                    'description' = 'Tekst')) %>%
+    dplyr::rename_with(~ "amount_dkk", dplyr::matches("Bel"))
 
   # Mutate amounts, add columns, rearrange columns
   df <- df %>%
